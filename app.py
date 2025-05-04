@@ -7,15 +7,13 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 import time
 
-# Load environment variables
+# Load environment variables (for local testing, if needed)
 load_dotenv()
 api_key = os.getenv("GOOGLE_API_KEY")
 
-# Fallback (Not recommended for production)
 if not api_key:
-    # If not found in .env file, use the provided key (better to use .env in production)
-    api_key = "AIzaSyCMFMHfyV1HmZhGu-ktkaypq08AQ-IGTus"
-
+    st.error("Google API key not found. Please configure it in Streamlit Secrets.")
+    st.stop()
 genai.configure(api_key=api_key)
 
 # Prompt Template (Advanced)
