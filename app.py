@@ -269,4 +269,7 @@ st.markdown("""
 <div style="margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #E5E7EB; text-align: center;">
     <p style="color: grey; font-size: 0.875rem;">Smart ATS Resume Analyzer | Powered by Google Gemini AI</p>
 </div>
+<div style="margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #E5E7EB; text-align: center;">
+    <p style="color: grey; font-size: 0.875rem;">© 2025 All rights reserved | Satyaki Abhijit</p>
+</div>
 """, unsafe_allow_html=True)
