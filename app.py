@@ -15,8 +15,9 @@ if not api_key:
     st.error("Google API key not found. Please configure it in Streamlit Secrets.")
     st.stop()
 genai.configure(api_key=api_key)
+genai.configure(api_key=api_key)
 
-# Prompt Template (Advanced)
+# Prompt template
 input_prompt = """
 You are an advanced AI-powered ATS and resume evaluator.
 
@@ -42,14 +43,12 @@ Return the result in the following JSON format:
 }}
 """
 
-# Set page configuration
 st.set_page_config(
     page_title="Smart ATS - Resume Analyzer",
     page_icon="📄",
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
 
 # Extract text from PDF
 def input_pdf_text(uploaded_file):
@@ -62,7 +61,6 @@ def input_pdf_text(uploaded_file):
     except Exception as e:
         return f"Error processing PDF: {str(e)}"
 
-
 # Get Gemini response
 def get_gemini_response(input_text):
     try:
@@ -71,7 +69,6 @@ def get_gemini_response(input_text):
         return response.text
     except Exception as e:
         return f"Error generating response: {str(e)}"
-
 
 # Parse JSON safely
 def parse_response(response_text):
@@ -84,36 +81,28 @@ def parse_response(response_text):
     except Exception as e:
         return {"raw_response": response_text, "error": str(e)}
 
-
-# Create animated loading
+# Animated loading
 def loading_animation():
     progress_bar = st.progress(0)
     status_text = st.empty()
-
     stages = [
-        "Reading resume...",
-        "Analyzing job description...",
-        "Identifying keywords...",
-        "Calculating match percentage...",
-        "Generating suggestions...",
-        "Creating profile summary...",
+        "Reading resume...", "Analyzing job description...",
+        "Identifying keywords...", "Calculating match percentage...",
+        "Generating suggestions...", "Creating profile summary...",
         "Finalizing report..."
     ]
-
     for i, stage in enumerate(stages):
         progress = (i + 1) / len(stages)
         progress_bar.progress(progress)
         status_text.text(f"⏳ {stage}")
         time.sleep(0.7)
-
     progress_bar.progress(1.0)
     status_text.text("✅ Analysis complete!")
     time.sleep(0.5)
     progress_bar.empty()
     status_text.empty()
 
-
-# Header section with animation
+# Header
 st.markdown("""
 <div style="text-align: center;">
     <h1>📄 Smart ATS: AI-Powered Resume Analyzer</h1>
@@ -126,7 +115,6 @@ st.markdown("""
 # Sidebar
 with st.sidebar:
     st.image("https://img.icons8.com/fluency/96/000000/resume.png")
-
     st.header("📚 How to Use")
     st.markdown("""
     <ol>
@@ -135,9 +123,7 @@ with st.sidebar:
         <li>Click <b>Analyze</b> to get AI-powered insights</li>
     </ol>
     """, unsafe_allow_html=True)
-
     st.markdown("---")
-
     st.header("🔍 Why Use This Tool?")
     st.markdown("""
     - Get matched against actual ATS systems
@@ -146,16 +132,12 @@ with st.sidebar:
     - Improve your job match percentage
     - Streamline your application process
     """)
-
     st.markdown("---")
-
     debug_mode = st.checkbox("🛠️ Debug Mode")
-
     st.caption("Powered by Google Gemini AI")
 
 # Main content area
 st.subheader("Job & Resume Details")
-
 col1, col2 = st.columns(2)
 with col1:
     st.markdown("### 📌 Job Description")
@@ -167,7 +149,6 @@ with col1:
 with col2:
     st.markdown("### 📎 Your Resume")
     uploaded_file = st.file_uploader("Upload your resume (PDF only)", type="pdf")
-
     if uploaded_file is not None:
         st.success(f"Uploaded: {uploaded_file.name}")
         st.markdown("""
@@ -179,7 +160,7 @@ with col2:
 
 analyze_button = st.button("🚀 Analyze Resume", type="primary", use_container_width=True)
 
-# Results section within the main area
+# Results section
 if analyze_button:
     if not jd:
         st.error("🚫 Please paste the job description before analyzing.")
@@ -188,9 +169,7 @@ if analyze_button:
     else:
         with st.spinner("Analyzing your resume..."):
             loading_animation()
-
             resume_text = input_pdf_text(uploaded_file)
-
             if "Error" in resume_text:
                 st.error(resume_text)
             else:
@@ -211,7 +190,7 @@ if analyze_button:
                 if "JD Match" in parsed_result:
                     st.markdown("## ✨ Resume Analysis Results")
 
-                    # Match percentage with progress bar
+                    # Match percentage
                     match_str = parsed_result["JD Match"].strip("%")
                     try:
                         match_value = int(match_str)
@@ -220,12 +199,8 @@ if analyze_button:
 
                     col1, col2, col3 = st.columns([1, 2, 1])
                     with col2:
-                        st.markdown(f"<h3 style='text-align: center;'>🎯 Job Description Match</h3>",
-                                    unsafe_allow_html=True)
-
-                        # Determine color based on match percentage
+                        st.markdown(f"<h3 style='text-align: center;'>🎯 Job Description Match</h3>", unsafe_allow_html=True)
                         color = "red" if match_value < 50 else "orange" if match_value < 75 else "green"
-
                         st.markdown(f"""
                         <div style="text-align: center; margin-bottom: 1rem;">
                             <div style="position: relative; height: 150px; width: 150px; margin: 0 auto;">
@@ -234,15 +209,9 @@ if analyze_button:
                                 </div>
                                 <svg viewBox="0 0 36 36" style="height: 100%; width: 100%; transform: rotate(-90deg);">
                                     <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                        fill="none"
-                                        stroke="#E5E7EB"
-                                        stroke-width="3"
-                                        stroke-dasharray="100, 100"/>
+                                        fill="none" stroke="#E5E7EB" stroke-width="3" stroke-dasharray="100, 100"/>
                                     <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                        fill="none"
-                                        stroke="{color}"
-                                        stroke-width="3"
-                                        stroke-dasharray="{match_value}, 100"/>
+                                        fill="none" stroke="{color}" stroke-width="3" stroke-dasharray="{match_value}, 100"/>
                                 </svg>
                             </div>
                         </div>
@@ -250,9 +219,8 @@ if analyze_button:
 
                     # Missing Keywords
                     st.markdown("### 🧩 Missing Keywords")
-                    if parsed_result["MissingKeywords"] and len(parsed_result["MissingKeywords"]) > 0:
-                        missing_keywords_text = ", ".join(parsed_result["MissingKeywords"])
-                        st.write(f"Missing Keywords: {missing_keywords_text}")
+                    if parsed_result["MissingKeywords"]:
+                        st.write("Missing Keywords: " + ", ".join(parsed_result["MissingKeywords"]))
                     else:
                         st.success("✅ Great job! No missing keywords found.")
 
@@ -266,12 +234,31 @@ if analyze_button:
                     st.markdown("### 🧠 Overall Profile Evaluation")
                     st.write(parsed_result["Profile Summary"])
 
-                    st.markdown("""
-                    <div style="text-align: center; margin-top: 2rem;">
-                        <p style="font-size: 0.9rem; color: grey;">Want to improve your resume even more?
-                        Consider using these suggestions to edit your resume before your next application.</p>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    # 🔗 Add job and internship search links
+                    domain_keywords = [
+                        "data science", "software", "frontend", "backend", "AI", "machine learning",
+                        "cybersecurity", "marketing", "finance", "design", "sales", "product", "cloud", "devops"
+                    ]
+                    domain_found = "job"
+                    for keyword in domain_keywords:
+                        if keyword.lower() in jd.lower():
+                            domain_found = keyword.lower().replace(" ", "-")
+                            break
+
+                    st.markdown("### 🔗 Explore Opportunities")
+
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        linkedin_url = f"https://www.linkedin.com/jobs/search/?keywords={domain_found}"
+                        st.markdown(f"""<a href="{linkedin_url}" target="_blank">
+                            <button style="background-color: #0072b1; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer;">🔍 Find Jobs on LinkedIn</button>
+                        </a>""", unsafe_allow_html=True)
+
+                    with col2:
+                        internshala_url = f"https://internshala.com/internships/{domain_found}-internship"
+                        st.markdown(f"""<a href="{internshala_url}" target="_blank">
+                            <button style="background-color: #00A8E8; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer;">🎓 Find Internships on Internshala</button>
+                        </a>""", unsafe_allow_html=True)
 
                 else:
                     st.warning("⚠️ Could not parse Gemini response correctly.")
