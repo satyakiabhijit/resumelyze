@@ -15,7 +15,6 @@ if not api_key:
     st.error("Google API key not found. Please configure it in Streamlit Secrets.")
     st.stop()
 genai.configure(api_key=api_key)
-genai.configure(api_key=api_key)
 
 # Prompt template
 input_prompt = """
@@ -64,7 +63,7 @@ def input_pdf_text(uploaded_file):
 # Get Gemini response
 def get_gemini_response(input_text):
     try:
-        model = genai.GenerativeModel('gemini-1.5-pro')
+        model = genai.GenerativeModel('gemini-2.0-flash-exp')
         response = model.generate_content(input_text)
         return response.text
     except Exception as e:
@@ -134,7 +133,7 @@ with st.sidebar:
     """)
     st.markdown("---")
     debug_mode = st.checkbox("🛠️ Debug Mode")
-    st.caption("Powered by Google Gemini AI")
+    st.caption("Powered by Google Gemini 2.0 Flash")
 
 # Main content area
 st.subheader("Job & Resume Details")
@@ -267,7 +266,7 @@ if analyze_button:
 # Footer
 st.markdown("""
 <div style="margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #E5E7EB; text-align: center;">
-    <p style="color: grey; font-size: 0.875rem;">Smart ATS Resume Analyzer | Powered by Google Gemini AI</p>
+    <p style="color: grey; font-size: 0.875rem;">Smart ATS Resume Analyzer | Powered by Google Gemini 2.0 Flash</p>
     <p style="color: grey; font-size: 0.875rem;">© 2025 All rights reserved | Satyaki Abhijit</p>
 </div>
 """, unsafe_allow_html=True)
