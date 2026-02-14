@@ -20,7 +20,7 @@ export default function Header({ backendStatus }: HeaderProps) {
             <Activity size={20} className="text-white" />
           </div>
           <span className="text-xl font-bold bg-gradient-to-r from-brand-400 to-purple-400 bg-clip-text text-transparent">
-            Resumelyze
+            Resumelyzer
           </span>
           <span className="hidden sm:inline text-xs bg-brand-500/20 text-brand-300 px-2 py-0.5 rounded-full border border-brand-500/30">
             v2.0

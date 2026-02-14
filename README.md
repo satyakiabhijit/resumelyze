@@ -1,50 +1,47 @@
-<h1 align="center">Resumelyze v2.0 - AI-Powered Resume Analyzer</h1>
-<h3 align="center">Full-stack resume analysis with FastAPI + Next.js + Google Gemini AI + Local NLP</h3>
+<h1 align="center">Resumelyze v3.0 - AI-Powered Resume Analyzer</h1>
+<h3 align="center">Fully serverless resume analysis with Next.js + Google Gemini AI + Local NLP — deploy on Vercel for free!</h3>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" />
   <img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" />
+  <img src="https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white" />
   <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" />
   <img src="https://img.shields.io/badge/Google_Gemini-4285F4?style=for-the-badge&logo=google&logoColor=white" />
   <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" />
-  <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" />
 </p>
 
 ---
 
-## What is New in v2.0
+## What is New in v3.0
 
-| Feature | v1.0 (Streamlit) | v2.0 (Full-Stack) |
-|---------|-------------------|--------------------|
-| Frontend | Streamlit | **Next.js + Tailwind + Framer Motion** |
-| Backend | Embedded in app | **FastAPI REST API with CORS** |
-| Analysis | AI-only (needs API key) | **AI + Local NLP + Hybrid mode** |
-| File Support | PDF only | **PDF, DOCX, TXT** |
-| Scoring | JD match only | **JD Match + ATS Score + Readability + Section Scores** |
-| Insights | Basic keywords | **Strengths, Weaknesses, Action Items, Recommended Roles** |
-| API | None | **Full REST API (connect any frontend!)** |
+| Feature | v2.0 (FastAPI + Next.js) | v3.0 (Fully Serverless) |
+|---------|--------------------------|--------------------------|
+| Architecture | Separate Python backend + Next.js frontend | **Single Next.js app with API routes** |
+| Deployment | Need 2 services (Fly.io + Vercel) | **Just Vercel (free!)** |
+| Backend | FastAPI (Python) | **Next.js API Routes (TypeScript)** |
+| Analysis | AI + Local NLP + Hybrid | **AI + Local NLP + Hybrid (same!)** |
+| File Support | PDF, DOCX, TXT | **PDF, DOCX, TXT (same!)** |
+| Cold Start | ~5s (separate backend) | **~1s (serverless functions)** |
 
 ## Project Structure
 
 ```
 resumelyze/
-  server.py                  # FastAPI backend entry point
-  backend/
-    __init__.py
-    config.py              # Configuration and prompts
-    models.py              # Pydantic models
-    analyzer.py            # Local NLP analyzer (no API needed)
-  app.py                     # Legacy Streamlit UI (still works!)
-  frontend/                  # Next.js frontend
+  frontend/                      # Everything lives here!
     package.json
-    next.config.js         # API proxy to backend
+    next.config.js
+    vercel.json                  # Vercel config
     tailwind.config.js
     tsconfig.json
+    .env.local                   # API key (local dev)
     src/
       app/
         layout.tsx
-        page.tsx           # Main page
+        page.tsx                 # Main page
         globals.css
+        api/
+          analyze/route.ts       # 🔥 Analysis API (serverless)
+          health/route.ts        # Health check API
+          modes/route.ts         # Available modes API
       components/
         Header.tsx
         Footer.tsx
@@ -55,70 +52,51 @@ resumelyze/
         ResultsDashboard.tsx
         ScoreCircle.tsx
       lib/
-        api.ts             # API client
-        utils.ts           # Helper functions
+        api.ts                   # Frontend API client
+        analyzer.ts              # 🧠 Local NLP engine (TypeScript)
+        gemini.ts                # 🤖 Gemini AI integration
+        pdf-parser.ts            # 📄 PDF/DOCX text extraction
+        utils.ts
       types/
-        index.ts           # TypeScript types
-    .env.local
-  requirements.txt
+        index.ts
+  LICENSE
   README.md
 ```
 
 ## Quick Start
 
-### 1. Clone and Setup Backend
+### 1. Clone and Install
 
 ```bash
 git clone https://github.com/satyakiabhijit/resumelyze.git
-cd resumelyze
-
-# Install Python dependencies
-pip install -r requirements.txt
-
-# (Optional) Add your Google API key for AI mode
-# Create a .env file:
-echo GOOGLE_API_KEY=your_key_here > .env
-
-# Start the FastAPI backend
-uvicorn server:app --reload --port 8000
+cd resumelyze/frontend
+npm install
 ```
 
-The API will be live at **http://localhost:8000** with docs at **http://localhost:8000/docs**
-
-### 2. Setup and Run Next.js Frontend
+### 2. Add API Key (optional — local mode works without it)
 
 ```bash
-cd frontend
-npm install
+# Create frontend/.env.local
+GOOGLE_API_KEY=your_gemini_api_key_here
+```
+
+### 3. Run
+
+```bash
 npm run dev
 ```
 
-The frontend will be live at **http://localhost:3000**
+Open **http://localhost:3000** — that's it! No separate backend needed.
 
-### 3. (Optional) Legacy Streamlit UI
+## Deploy to Vercel (Free)
 
-```bash
-streamlit run app.py
-```
+1. Push to GitHub
+2. Go to [vercel.com/new](https://vercel.com/new) → Import your repo
+3. Set **Root Directory** → `frontend`
+4. Add **Environment Variable**: `GOOGLE_API_KEY` = `your_key_here`
+5. Click **Deploy** 🚀
 
-## API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | /health | Health check - shows AI and NLP availability |
-| GET | /api/modes | Available analysis modes |
-| POST | /api/analyze | Analyze resume (file upload + JD) |
-| POST | /api/analyze/text | Analyze resume text (no file upload) |
-| POST | /api/extract-text | Extract text from PDF/DOCX/TXT |
-
-### Example: Analyze via cURL
-
-```bash
-curl -X POST http://localhost:8000/api/analyze \
-  -F "job_description=Looking for a Python developer with FastAPI experience..." \
-  -F "resume_file=@resume.pdf" \
-  -F "mode=hybrid"
-```
+Your app will be live at `https://your-project.vercel.app`
 
 ## Analysis Modes
 
@@ -126,19 +104,15 @@ curl -X POST http://localhost:8000/api/analyze \
 |------|-------------------|-------------|
 | **Local** | No | TF-IDF cosine similarity, keyword extraction, section detection, readability scoring |
 | **AI** | Yes | Full Google Gemini analysis with deep semantic understanding |
-| **Hybrid** | Yes (falls back to local) | Best of both - merges NLP scores with AI insights |
+| **Hybrid** | Yes (falls back to local) | Best of both — merges NLP scores with AI insights |
 
 ## Technologies
 
-**Backend:** Python, FastAPI, Uvicorn, PyPDF2, python-docx, Google Generative AI, Pydantic
+**Runtime:** Next.js 14, TypeScript, Vercel Serverless Functions
 
-**Frontend:** Next.js 14, TypeScript, Tailwind CSS, Framer Motion, Recharts, Lucide Icons, Axios, React Dropzone, Sonner
+**UI:** Tailwind CSS, Framer Motion, Recharts, Lucide Icons, React Dropzone, Sonner
 
-## 🚀 Deployment
-
-For production deployment, see [DEPLOYMENT.md](DEPLOYMENT.md) for step-by-step instructions on deploying to:
-- **Backend**: Fly.io (free tier)
-- **Frontend**: Vercel (free tier)
+**Analysis:** Local NLP (TF-IDF), Google Gemini AI (REST API), pdf-parse, mammoth
 
 ## Contributing
 

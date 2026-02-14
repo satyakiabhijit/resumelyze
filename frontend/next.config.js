@@ -1,12 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: "http://localhost:8000/api/:path*",
-      },
-    ];
+  // API routes are built-in — no proxy needed!
+  experimental: {
+    serverComponentsExternalPackages: ["pdf-parse", "mammoth"],
   },
 };
 

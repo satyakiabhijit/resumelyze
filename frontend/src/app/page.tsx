@@ -44,7 +44,7 @@ export default function Home() {
         setAnalysisMode(modesData.default);
       } catch {
         setBackendStatus("offline");
-        toast.error("Backend is offline. Start the server with: uvicorn server:app --reload");
+        toast.error("Could not connect to API. Please try again.");
       }
     }
     init();
@@ -114,11 +114,11 @@ export default function Home() {
           className="text-center mb-12"
         >
           <h1 className="text-5xl sm:text-6xl font-extrabold bg-gradient-to-r from-brand-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">
-            Resumelyze
+            Resumelyzer
           </h1>
           <p className="text-lg text-gray-400 max-w-2xl mx-auto">
             AI-powered resume analysis with ATS scoring, keyword optimization, and
-            actionable improvement suggestions. Works with or without an API key.
+            actionable improvement suggestions.
           </p>
 
           {/* Feature badges */}

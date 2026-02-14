@@ -40,9 +40,3 @@ export interface ModesResponse {
   modes: AnalysisMode[];
   default: string;
 }
-
-export interface ExtractTextResponse {
-  text: string;
-  char_count: number;
-  filename: string;
-}
