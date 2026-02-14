@@ -1,7 +1,7 @@
 /**
  * Simple text extraction from file uploads.
- * Handles TXT files directly; PDF text extraction via a lightweight approach.
- * For PDF, uses pdf-parse (server-side only).
+ * Handles TXT files directly; PDF text extraction via pdfjs-dist (serverless-compatible).
+ * For PDF, uses pdfjs-dist which works in Node.js serverless environments.
  */
 
 export async function extractTextFromFile(
@@ -16,11 +16,29 @@ export async function extractTextFromFile(
 
   if (ext === "pdf") {
     try {
-      // pdf-parse exports PDFParse class that needs data in constructor
-      const { PDFParse } = await import("pdf-parse");
-      const parser = new PDFParse({ data: buffer });
-      const textResult = await parser.getText();
-      return textResult.text || "";
+      // Use pdfjs-dist (serverless-compatible, no DOM dependencies)
+      const pdfjsLib = await import("pdfjs-dist");
+      
+      // Load PDF from buffer
+      const loadingTask = pdfjsLib.getDocument({
+        data: new Uint8Array(buffer),
+        useSystemFonts: true,
+      });
+      
+      const pdf = await loadingTask.promise;
+      const textParts: string[] = [];
+      
+      // Extract text from each page
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items
+          .map((item: any) => item.str)
+          .join(" ");
+        textParts.push(pageText);
+      }
+      
+      return textParts.join("\n\n");
     } catch (error: any) {
       throw new Error(`PDF parsing failed: ${error.message}`);
     }

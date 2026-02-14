@@ -2,7 +2,7 @@
 const nextConfig = {
   // API routes are built-in — no proxy needed!
   experimental: {
-    serverComponentsExternalPackages: ["pdf-parse", "mammoth"],
+    serverComponentsExternalPackages: ["pdfjs-dist", "mammoth"],
   },
 };
 
