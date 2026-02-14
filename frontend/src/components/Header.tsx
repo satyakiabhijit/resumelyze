@@ -49,7 +49,7 @@ export default function Header({ backendStatus }: HeaderProps) {
               <div className="w-3 h-3 border-2 border-yellow-400/30 border-t-yellow-400 rounded-full animate-spin" />
             )}
             {backendStatus === "online"
-              ? "API Connected"
+              ? ""
               : backendStatus === "offline"
               ? "API Offline"
               : "Connecting..."}
