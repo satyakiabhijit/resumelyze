@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Activity, Wifi, WifiOff } from "lucide-react";
+import { Wifi, WifiOff } from "lucide-react";
+import Image from "next/image";
 
 interface HeaderProps {
   backendStatus: "checking" | "online" | "offline";
@@ -16,8 +17,14 @@ export default function Header({ backendStatus }: HeaderProps) {
           animate={{ opacity: 1, x: 0 }}
           className="flex items-center gap-3"
         >
-          <div className="w-9 h-9 bg-gradient-to-br from-brand-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-brand-500/30">
-            <Activity size={20} className="text-white" />
+          <div className="w-9 h-9 bg-gradient-to-br from-brand-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-brand-500/30 overflow-hidden">
+            <Image 
+              src="/logo.ico" 
+              alt="Resumelyzer Logo" 
+              width={24} 
+              height={24}
+              className="object-contain"
+            />
           </div>
           <span className="text-xl font-bold bg-gradient-to-r from-brand-400 to-purple-400 bg-clip-text text-transparent">
             Resumelyzer
