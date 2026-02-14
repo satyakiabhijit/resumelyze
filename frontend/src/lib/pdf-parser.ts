@@ -18,7 +18,9 @@ export async function extractTextFromFile(
     try {
       // Use unpdf - built for serverless, no worker files needed
       const { extractText } = await import("unpdf");
-      const { text } = await extractText(buffer);
+      // Convert Buffer to Uint8Array (unpdf requires Uint8Array)
+      const uint8Array = new Uint8Array(buffer);
+      const { text } = await extractText(uint8Array);
       // unpdf returns text as string or array of strings
       return Array.isArray(text) ? text.join("\n\n") : text || "";
     } catch (error: any) {
