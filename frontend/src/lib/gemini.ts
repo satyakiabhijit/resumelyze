@@ -35,7 +35,32 @@ You must respond with ONLY valid JSON (no markdown, no code blocks, no extra tex
   "keyword_density": 0.15,
   "readability_score": 85,
   "formatting_feedback": "Feedback about resume formatting",
-  "recommended_roles": ["role1", "role2", "role3"]
+  "recommended_roles": ["role1", "role2", "role3"],
+  "cliches": [
+    { "phrase": "results-driven", "suggestion": "Replace with a specific achievement demonstrating results" },
+    { "phrase": "team player", "suggestion": "Describe a specific team collaboration outcome" }
+  ],
+  "action_verb_analysis": {
+    "score": 70,
+    "weak_verbs": ["managed", "helped", "worked on"],
+    "strong_verbs": ["spearheaded", "architected", "optimized"],
+    "suggestions": ["Replace 'managed' with 'orchestrated' or 'led'"]
+  },
+  "quantification_analysis": {
+    "score": 60,
+    "quantified_bullets": 3,
+    "total_bullets": 8,
+    "suggestions": ["Add metrics to your achievement about project delivery"]
+  },
+  "content_improvements": [
+    {
+      "original": "Managed a team of developers",
+      "improved": "Led a cross-functional team of 8 developers, delivering 3 major features ahead of schedule",
+      "reason": "Added specifics, quantification, and outcome"
+    }
+  ],
+  "section_completeness": 75,
+  "overall_grade": "B+"
 }`;
 
 // Model candidates to try in order
@@ -175,6 +200,27 @@ export interface AiAnalysisResult {
   formatting_feedback: string;
   recommended_roles: string[];
   analysis_mode: string;
+  cliches?: { phrase: string; suggestion: string }[];
+  action_verb_analysis?: {
+    score: number;
+    weak_verbs: string[];
+    strong_verbs: string[];
+    suggestions: string[];
+  };
+  quantification_analysis?: {
+    score: number;
+    quantified_bullets: number;
+    total_bullets: number;
+    suggestions: string[];
+  };
+  ats_detailed?: any;
+  content_improvements?: {
+    original: string;
+    improved: string;
+    reason: string;
+  }[];
+  section_completeness?: number;
+  overall_grade?: string;
 }
 
 /** Full AI-powered analysis using Gemini. */
@@ -223,5 +269,137 @@ export async function aiAnalyze(
     formatting_feedback: parsed.formatting_feedback || "",
     recommended_roles: parsed.recommended_roles || [],
     analysis_mode: "ai",
+    cliches: parsed.cliches || [],
+    action_verb_analysis: parsed.action_verb_analysis || undefined,
+    quantification_analysis: parsed.quantification_analysis || undefined,
+    ats_detailed: parsed.ats_detailed || undefined,
+    content_improvements: parsed.content_improvements || [],
+    section_completeness: parsed.section_completeness || 0,
+    overall_grade: parsed.overall_grade || "",
+  };
+}
+
+// ── Cover Letter Generation ──
+
+const COVER_LETTER_PROMPT = `You are an expert career coach and cover letter writer.
+
+Generate a compelling, personalized cover letter based on the candidate's resume and the target job description.
+
+Resume:
+{resume_text}
+
+Job Description:
+{job_description}
+
+Tone: {tone}
+Company: {company_name}
+Role: {role_title}
+
+You must respond with ONLY valid JSON (no markdown, no code blocks). Use this exact structure:
+
+{
+  "cover_letter": "The full cover letter text with proper paragraphs separated by \\n\\n",
+  "tone": "professional",
+  "word_count": 250
+}
+
+Guidelines:
+- Open with a strong hook, not "I am writing to apply"
+- Reference specific requirements from the JD
+- Highlight 2-3 key achievements from the resume that match the role
+- Keep it under 350 words
+- End with a clear call to action
+- Make it feel human, not generic`;
+
+export async function aiGenerateCoverLetter(
+  resumeText: string,
+  jobDescription: string,
+  tone: string,
+  companyName: string,
+  roleTitle: string,
+  apiKey: string
+): Promise<{ cover_letter: string; tone: string; word_count: number }> {
+  const prompt = COVER_LETTER_PROMPT
+    .replace("{resume_text}", resumeText)
+    .replace("{job_description}", jobDescription)
+    .replace("{tone}", tone)
+    .replace("{company_name}", companyName || "the company")
+    .replace("{role_title}", roleTitle || "the role");
+
+  const raw = await callGemini(prompt, apiKey);
+  const parsed = parseAiResponse(raw);
+
+  if (!parsed) {
+    throw new Error("Failed to parse cover letter response");
+  }
+
+  const letter = parsed.cover_letter || "";
+  return {
+    cover_letter: letter,
+    tone: parsed.tone || tone,
+    word_count: letter.split(/\s+/).filter(Boolean).length,
+  };
+}
+
+// ── Skills Finder ──
+
+const SKILLS_PROMPT = `You are an expert career advisor and ATS specialist.
+
+Analyze the job description and identify all relevant skills a candidate should have. If a resume is provided, compare it against the required skills.
+
+Job Description:
+{job_description}
+
+Resume (may be empty):
+{resume_text}
+
+Target Role: {role_title}
+
+You must respond with ONLY valid JSON (no markdown, no code blocks). Use this exact structure:
+
+{
+  "role": "Software Engineer",
+  "hard_skills": [
+    { "category": "Programming Languages", "skills": ["Python", "JavaScript", "TypeScript"] },
+    { "category": "Frameworks", "skills": ["React", "Next.js", "Node.js"] },
+    { "category": "Tools & Platforms", "skills": ["Docker", "AWS", "Git"] }
+  ],
+  "soft_skills": ["Communication", "Problem Solving", "Team Leadership"],
+  "missing_from_resume": ["Kubernetes", "GraphQL"],
+  "matching_in_resume": ["Python", "React", "AWS"]
+}
+
+Be comprehensive. Include 15-30 hard skills across categories and 5-10 soft skills.`;
+
+export async function aiFindSkills(
+  jobDescription: string,
+  resumeText: string,
+  roleTitle: string,
+  apiKey: string
+): Promise<{
+  role: string;
+  hard_skills: { category: string; skills: string[] }[];
+  soft_skills: string[];
+  missing_from_resume: string[];
+  matching_in_resume: string[];
+}> {
+  const prompt = SKILLS_PROMPT
+    .replace("{job_description}", jobDescription)
+    .replace("{resume_text}", resumeText || "Not provided")
+    .replace("{role_title}", roleTitle || "Not specified");
+
+  const raw = await callGemini(prompt, apiKey);
+  const parsed = parseAiResponse(raw);
+
+  if (!parsed) {
+    throw new Error("Failed to parse skills response");
+  }
+
+  return {
+    role: parsed.role || roleTitle || "Unknown",
+    hard_skills: parsed.hard_skills || [],
+    soft_skills: parsed.soft_skills || [],
+    missing_from_resume: parsed.missing_from_resume || [],
+    matching_in_resume: parsed.matching_in_resume || [],
   };
 }

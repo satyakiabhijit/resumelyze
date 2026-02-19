@@ -3,6 +3,8 @@ import type {
   AnalysisResult,
   HealthResponse,
   ModesResponse,
+  CoverLetterResult,
+  SkillsFinderResult,
 } from "@/types";
 
 // All API calls go to our own Next.js API routes — no external backend needed!
@@ -40,6 +42,36 @@ export async function analyzeResume(
 
   const { data } = await api.post<AnalysisResult>("/api/analyze", formData, {
     headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data;
+}
+
+export async function generateCoverLetter(
+  resumeText: string,
+  jobDescription: string,
+  tone: "professional" | "creative" | "conversational" = "professional",
+  companyName?: string,
+  roleTitle?: string
+): Promise<CoverLetterResult> {
+  const { data } = await api.post<CoverLetterResult>("/api/cover-letter", {
+    resume_text: resumeText,
+    job_description: jobDescription,
+    tone,
+    company_name: companyName,
+    role_title: roleTitle,
+  });
+  return data;
+}
+
+export async function findSkills(
+  jobDescription: string,
+  resumeText?: string,
+  roleTitle?: string
+): Promise<SkillsFinderResult> {
+  const { data } = await api.post<SkillsFinderResult>("/api/skills", {
+    job_description: jobDescription,
+    resume_text: resumeText,
+    role_title: roleTitle,
   });
   return data;
 }

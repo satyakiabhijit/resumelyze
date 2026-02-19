@@ -14,6 +14,11 @@ import {
   TrendingUp,
   FileSearch,
   ExternalLink,
+  Zap,
+  Hash,
+  RefreshCw,
+  Award,
+  ArrowRight,
 } from "lucide-react";
 import ScoreCircle from "./ScoreCircle";
 import { getScoreColor, getScoreBg, getScoreLabel } from "@/lib/utils";
@@ -238,6 +243,11 @@ export default function ResultsDashboard({ result, jd }: ResultsDashboardProps) 
         <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
           <FileSearch size={18} className="text-brand-400" />
           Profile Summary
+          {result.overall_grade && (
+            <span className="ml-auto px-3 py-1 rounded-full text-sm font-bold bg-brand-500/10 border border-brand-500/20 text-brand-300">
+              Grade: {result.overall_grade}
+            </span>
+          )}
         </h3>
         <p className="text-gray-300 leading-relaxed">{result.profile_summary}</p>
 
@@ -248,7 +258,203 @@ export default function ResultsDashboard({ result, jd }: ResultsDashboardProps) 
             </p>
           </div>
         )}
+
+        {typeof result.section_completeness === "number" && result.section_completeness > 0 && (
+          <div className="mt-4 p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-lg">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-sm text-gray-400">Section Completeness</span>
+              <span className={`text-sm font-semibold ${getScoreColor(result.section_completeness)}`}>
+                {result.section_completeness}%
+              </span>
+            </div>
+            <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${result.section_completeness}%` }}
+                transition={{ duration: 1 }}
+                className={`h-full rounded-full ${getScoreBg(result.section_completeness)}`}
+              />
+            </div>
+          </div>
+        )}
       </motion.div>
+
+      {/* ── Cliché Detection ── */}
+      {result.cliches && result.cliches.length > 0 && (
+        <motion.div variants={item} className="glass-card p-6">
+          <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
+            <AlertTriangle size={18} className="text-orange-400" />
+            Clichés Detected ({result.cliches.length})
+          </h3>
+          <p className="text-gray-500 text-sm mb-4">
+            These overused phrases weaken your resume. Replace them with specific, quantified achievements.
+          </p>
+          <div className="space-y-3">
+            {result.cliches.map((c, i) => (
+              <div
+                key={i}
+                className="p-3 bg-orange-500/5 border border-orange-500/10 rounded-lg grid sm:grid-cols-2 gap-3"
+              >
+                <div className="flex items-start gap-2">
+                  <XCircle size={14} className="text-red-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <div className="text-[10px] text-red-400 font-medium mb-0.5">CLICHÉ</div>
+                    <p className="text-gray-400 text-sm line-through">&ldquo;{c.phrase}&rdquo;</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 size={14} className="text-green-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <div className="text-[10px] text-green-400 font-medium mb-0.5">SUGGESTION</div>
+                    <p className="text-gray-300 text-sm">{c.suggestion}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* ── Action Verb Analysis ── */}
+      {result.action_verb_analysis && (
+        <motion.div variants={item} className="glass-card p-6">
+          <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
+            <Zap size={18} className="text-yellow-400" />
+            Action Verb Analysis
+            <span className={`ml-auto text-sm font-semibold ${getScoreColor(result.action_verb_analysis.score)}`}>
+              {result.action_verb_analysis.score}%
+            </span>
+          </h3>
+          <div className="grid sm:grid-cols-2 gap-4 mb-4">
+            {result.action_verb_analysis.strong_verbs.length > 0 && (
+              <div>
+                <h4 className="text-sm text-green-400 font-medium mb-2 flex items-center gap-1">
+                  <CheckCircle2 size={13} /> Strong Verbs Found
+                </h4>
+                <div className="flex flex-wrap gap-1.5">
+                  {result.action_verb_analysis.strong_verbs.map((v) => (
+                    <span
+                      key={v}
+                      className="px-2.5 py-1 bg-green-500/10 border border-green-500/20 text-green-300 rounded-full text-xs"
+                    >
+                      {v}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {result.action_verb_analysis.weak_verbs.length > 0 && (
+              <div>
+                <h4 className="text-sm text-red-400 font-medium mb-2 flex items-center gap-1">
+                  <XCircle size={13} /> Weak Verbs to Replace
+                </h4>
+                <div className="flex flex-wrap gap-1.5">
+                  {result.action_verb_analysis.weak_verbs.map((v) => (
+                    <span
+                      key={v}
+                      className="px-2.5 py-1 bg-red-500/10 border border-red-500/20 text-red-300 rounded-full text-xs"
+                    >
+                      {v}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          {result.action_verb_analysis.suggestions.length > 0 && (
+            <div className="space-y-2">
+              {result.action_verb_analysis.suggestions.map((s, i) => (
+                <p key={i} className="text-gray-400 text-sm flex items-start gap-2">
+                  <ArrowRight size={13} className="text-brand-400 mt-0.5 flex-shrink-0" />
+                  {s}
+                </p>
+              ))}
+            </div>
+          )}
+        </motion.div>
+      )}
+
+      {/* ── Quantification Analysis ── */}
+      {result.quantification_analysis && (
+        <motion.div variants={item} className="glass-card p-6">
+          <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
+            <Hash size={18} className="text-cyan-400" />
+            Quantification Check
+            <span className={`ml-auto text-sm font-semibold ${getScoreColor(result.quantification_analysis.score)}`}>
+              {result.quantification_analysis.score}%
+            </span>
+          </h3>
+          <div className="flex items-center gap-4 mb-4">
+            <div className="glass-card p-3 text-center flex-1">
+              <div className="text-2xl font-bold text-cyan-400">
+                {result.quantification_analysis.quantified_bullets}
+              </div>
+              <div className="text-xs text-gray-500">Quantified Bullets</div>
+            </div>
+            <div className="glass-card p-3 text-center flex-1">
+              <div className="text-2xl font-bold text-gray-400">
+                {result.quantification_analysis.total_bullets}
+              </div>
+              <div className="text-xs text-gray-500">Total Bullets</div>
+            </div>
+            <div className="glass-card p-3 text-center flex-1">
+              <div className={`text-2xl font-bold ${getScoreColor(result.quantification_analysis.score)}`}>
+                {result.quantification_analysis.total_bullets > 0
+                  ? Math.round(
+                      (result.quantification_analysis.quantified_bullets /
+                        result.quantification_analysis.total_bullets) *
+                        100
+                    )
+                  : 0}
+                %
+              </div>
+              <div className="text-xs text-gray-500">With Numbers</div>
+            </div>
+          </div>
+          {result.quantification_analysis.suggestions.length > 0 && (
+            <div className="space-y-2">
+              {result.quantification_analysis.suggestions.map((s, i) => (
+                <p key={i} className="text-gray-400 text-sm flex items-start gap-2">
+                  <Lightbulb size={13} className="text-yellow-400 mt-0.5 flex-shrink-0" />
+                  {s}
+                </p>
+              ))}
+            </div>
+          )}
+        </motion.div>
+      )}
+
+      {/* ── AI Content Improvements ── */}
+      {result.content_improvements && result.content_improvements.length > 0 && (
+        <motion.div variants={item} className="glass-card p-6">
+          <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
+            <RefreshCw size={18} className="text-purple-400" />
+            AI Content Improvements ({result.content_improvements.length})
+          </h3>
+          <p className="text-gray-500 text-sm mb-4">
+            Here&apos;s how to rewrite key bullet points for maximum impact.
+          </p>
+          <div className="space-y-4">
+            {result.content_improvements.map((ci, i) => (
+              <div key={i} className="p-4 bg-purple-500/5 border border-purple-500/10 rounded-lg">
+                <div className="grid sm:grid-cols-2 gap-4 mb-2">
+                  <div>
+                    <div className="text-[10px] text-red-400 font-medium mb-1">ORIGINAL</div>
+                    <p className="text-gray-400 text-sm">{ci.original}</p>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-green-400 font-medium mb-1">IMPROVED</div>
+                    <p className="text-gray-300 text-sm font-medium">{ci.improved}</p>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  <strong className="text-purple-400">Why:</strong> {ci.reason}
+                </p>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       {/* ── Recommended Roles ── */}
       {result.recommended_roles.length > 0 && (

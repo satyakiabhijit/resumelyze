@@ -59,6 +59,17 @@ export async function POST(req: NextRequest) {
     const apiKey = process.env.GOOGLE_API_KEY || "";
     const aiAvailable = apiKey.length > 0;
 
+    /** Returns true when the error is an API key problem (expired / invalid). */
+    function isKeyError(e: any): boolean {
+      const msg: string = e?.message || "";
+      return (
+        msg.includes("API key expired") ||
+        msg.includes("INVALID_ARGUMENT") ||
+        msg.includes("API_KEY_INVALID") ||
+        msg.includes("Please renew the API key")
+      );
+    }
+
     // Run analysis
     if (mode === "ai") {
       if (!aiAvailable) {
@@ -67,8 +78,18 @@ export async function POST(req: NextRequest) {
           { status: 503 }
         );
       }
-      const result = await aiAnalyze(resumeText, jobDescription, apiKey);
-      return NextResponse.json(result);
+      try {
+        const result = await aiAnalyze(resumeText, jobDescription, apiKey);
+        return NextResponse.json(result);
+      } catch (e: any) {
+        if (isKeyError(e)) {
+          // Key is expired — transparently fall back to local NLP
+          const localResult = analyzeLocally(resumeText, jobDescription);
+          localResult.analysis_mode = "local (AI key expired)";
+          return NextResponse.json(localResult);
+        }
+        throw e;
+      }
     }
 
     if (mode === "local") {
@@ -112,8 +133,9 @@ export async function POST(req: NextRequest) {
         merged.analysis_mode = "hybrid";
         return NextResponse.json(merged);
       } catch (e: any) {
-        console.warn("AI failed in hybrid mode, falling back to local:", e.message);
-        localResult.analysis_mode = "local (AI fallback)";
+        const reason = isKeyError(e) ? "AI key expired" : "AI error";
+        console.warn(`AI failed in hybrid mode (${reason}), falling back to local:`, e.message);
+        localResult.analysis_mode = `local (${reason})`;
         return NextResponse.json(localResult);
       }
     }
