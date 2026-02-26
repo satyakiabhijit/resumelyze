@@ -1,38 +1,34 @@
 import { NextResponse } from "next/server";
 
+const ML_SERVER = process.env.ML_SERVER_URL || "http://127.0.0.1:8100";
+
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const apiKey = process.env.GOOGLE_API_KEY || "";
-  const aiAvailable = apiKey.length > 0;
+  let mlAvailable = false;
+
+  try {
+    const res = await fetch(`${ML_SERVER}/health`, {
+      signal: AbortSignal.timeout(2000),
+    });
+    mlAvailable = res.ok;
+  } catch {
+    // ML server not running
+  }
 
   const modes = [
     {
-      id: "local",
-      name: "Local NLP",
-      available: true,
-      description: "Keyword matching & NLP analysis — no API key needed",
-    },
-    {
-      id: "ai",
-      name: "AI (Gemini)",
-      available: aiAvailable,
-      description: aiAvailable
-        ? "Full AI-powered analysis using Google Gemini"
-        : "Requires GOOGLE_API_KEY environment variable",
-    },
-    {
-      id: "hybrid",
-      name: "Hybrid",
-      available: aiAvailable,
-      description: aiAvailable
-        ? "Best of both — local NLP + AI enhancement"
-        : "Requires GOOGLE_API_KEY environment variable",
+      id: "ml",
+      name: "ML Analysis",
+      available: mlAvailable,
+      description: mlAvailable
+        ? "Sentence-BERT + trained models — 95%+ accuracy"
+        : "ML server offline — start it with: cd ml-server && python -m app.main",
     },
   ];
 
   return NextResponse.json({
     modes,
-    default: aiAvailable ? "ai" : "local",
+    default: "ml",
   });
 }

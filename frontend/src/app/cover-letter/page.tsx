@@ -14,10 +14,12 @@ import {
   Palette,
 } from "lucide-react";
 import { generateCoverLetter } from "@/lib/api";
+import { useAuth } from "@/components/AuthProvider";
 import FileUpload from "@/components/FileUpload";
 import type { CoverLetterResult } from "@/types";
 
 export default function CoverLetterPage() {
+  const { user } = useAuth();
   const [resumeText, setResumeText] = useState("");
   const [jd, setJd] = useState("");
   const [companyName, setCompanyName] = useState("");
@@ -54,6 +56,26 @@ export default function CoverLetterPage() {
       const data = await generateCoverLetter(textToSend, jd, tone, companyName, roleTitle);
       setResult(data);
       toast.success("Cover letter generated!");
+
+      // Auto-save to DB if logged in
+      if (user) {
+        try {
+          await fetch("/api/saved-letters", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              company_name: companyName,
+              role_title: roleTitle,
+              tone,
+              cover_letter_text: data.cover_letter,
+              word_count: data.word_count,
+              job_description: jd,
+            }),
+          });
+        } catch {
+          // Silent fail
+        }
+      }
     } catch (error: any) {
       const msg = error?.response?.data?.detail || error.message || "Generation failed";
       toast.error(msg);
@@ -94,10 +116,10 @@ export default function CoverLetterPage() {
         animate={{ opacity: 1, y: 0 }}
         className="text-center mb-12"
       >
-        <h1 className="text-4xl sm:text-5xl font-extrabold bg-gradient-to-r from-brand-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">
+        <h1 className="text-4xl sm:text-5xl font-extrabold bg-gradient-to-r from-brand-600 to-purple-600 bg-clip-text text-transparent mb-4">
           Cover Letter Generator
         </h1>
-        <p className="text-lg text-gray-400 max-w-2xl mx-auto">
+        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
           AI-powered cover letter generation tailored to your resume and the job description.
           One click, fully personalized.
         </p>
@@ -121,7 +143,7 @@ export default function CoverLetterPage() {
               value={jd}
               onChange={(e) => setJd(e.target.value)}
               placeholder="Paste the complete job description here..."
-              className="w-full h-48 bg-gray-800/50 border border-gray-700 rounded-xl p-4 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+              className="w-full h-48 bg-gray-50 border border-gray-200 rounded-xl p-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
             />
           </motion.div>
 
@@ -137,16 +159,16 @@ export default function CoverLetterPage() {
                 <FileText size={18} className="text-brand-400" />
                 Your Resume
               </h2>
-              <div className="flex bg-gray-800 rounded-lg p-1 text-sm">
+              <div className="flex bg-gray-100 rounded-lg p-1 text-sm">
                 <button
                   onClick={() => setInputMode("text")}
-                  className={`px-3 py-1 rounded-md transition ${inputMode === "text" ? "bg-brand-600 text-white" : "text-gray-400 hover:text-white"}`}
+                  className={`px-3 py-1 rounded-md transition ${inputMode === "text" ? "bg-brand-600 text-white" : "text-gray-500 hover:text-gray-900"}`}
                 >
                   Paste Text
                 </button>
                 <button
                   onClick={() => setInputMode("file")}
-                  className={`px-3 py-1 rounded-md transition ${inputMode === "file" ? "bg-brand-600 text-white" : "text-gray-400 hover:text-white"}`}
+                  className={`px-3 py-1 rounded-md transition ${inputMode === "file" ? "bg-brand-600 text-white" : "text-gray-500 hover:text-gray-900"}`}
                 >
                   <Upload size={14} className="inline mr-1" />
                   Upload
@@ -158,7 +180,7 @@ export default function CoverLetterPage() {
                 value={resumeText}
                 onChange={(e) => setResumeText(e.target.value)}
                 placeholder="Paste your resume text here..."
-                className="w-full h-48 bg-gray-800/50 border border-gray-700 rounded-xl p-4 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+                className="w-full h-48 bg-gray-50 border border-gray-200 rounded-xl p-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
               />
             ) : (
               <FileUpload file={file} onFileChange={setFile} />
@@ -178,28 +200,28 @@ export default function CoverLetterPage() {
             </h2>
             <div className="grid sm:grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="text-sm text-gray-400 mb-1 block">Company Name</label>
+                <label className="text-sm text-gray-600 mb-1 block">Company Name</label>
                 <input
                   type="text"
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
                   placeholder="e.g., Google"
-                  className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-3 py-2 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
               <div>
-                <label className="text-sm text-gray-400 mb-1 block">Role Title</label>
+                <label className="text-sm text-gray-600 mb-1 block">Role Title</label>
                 <input
                   type="text"
                   value={roleTitle}
                   onChange={(e) => setRoleTitle(e.target.value)}
                   placeholder="e.g., Software Engineer"
-                  className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-3 py-2 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
             </div>
 
-            <label className="text-sm text-gray-400 mb-2 block">Tone</label>
+            <label className="text-sm text-gray-600 mb-2 block">Tone</label>
             <div className="grid sm:grid-cols-3 gap-3">
               {toneOptions.map((t) => (
                 <button
@@ -207,12 +229,12 @@ export default function CoverLetterPage() {
                   onClick={() => setTone(t.value)}
                   className={`p-3 rounded-lg border text-left transition ${
                     tone === t.value
-                      ? "border-brand-500 bg-brand-500/10 text-brand-300"
-                      : "border-gray-700 text-gray-400 hover:border-gray-600"
+                      ? "border-brand-500 bg-brand-50 text-brand-700"
+                      : "border-gray-200 text-gray-600 hover:border-gray-300"
                   }`}
                 >
                   <div className="text-sm font-medium">{t.label}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">{t.desc}</div>
+                  <div className="text-xs text-gray-400 mt-0.5">{t.desc}</div>
                 </button>
               ))}
             </div>
@@ -259,14 +281,14 @@ export default function CoverLetterPage() {
               <div className="flex gap-2">
                 <button
                   onClick={handleCopy}
-                  className="p-2 text-gray-400 hover:text-white bg-gray-800 rounded-lg transition"
+                  className="p-2 text-gray-500 hover:text-gray-700 bg-gray-100 rounded-lg transition"
                   title="Copy to clipboard"
                 >
                   <Copy size={16} />
                 </button>
                 <button
                   onClick={handleDownload}
-                  className="p-2 text-gray-400 hover:text-white bg-gray-800 rounded-lg transition"
+                  className="p-2 text-gray-500 hover:text-gray-700 bg-gray-100 rounded-lg transition"
                   title="Download as .txt"
                 >
                   <Download size={16} />
@@ -277,24 +299,24 @@ export default function CoverLetterPage() {
 
           {result ? (
             <div className="flex-1 flex flex-col">
-              <div className="flex-1 bg-gray-800/30 rounded-xl p-6 mb-4 overflow-y-auto max-h-[600px]">
-                <div className="prose prose-invert prose-sm max-w-none whitespace-pre-wrap text-gray-300 leading-relaxed">
+              <div className="flex-1 bg-gray-50 rounded-xl p-6 mb-4 overflow-y-auto max-h-[600px]">
+                <div className="prose prose-sm max-w-none whitespace-pre-wrap text-gray-700 leading-relaxed">
                   {result.cover_letter}
                 </div>
               </div>
               <div className="flex items-center justify-between text-sm text-gray-500">
-                <span>Tone: <span className="text-brand-400 capitalize">{result.tone}</span></span>
+                <span>Tone: <span className="text-brand-600 capitalize">{result.tone}</span></span>
                 <span>{result.word_count} words</span>
               </div>
             </div>
           ) : (
             <div className="flex-1 flex items-center justify-center text-center">
               <div>
-                <Mail size={64} className="mx-auto text-gray-700 mb-4" />
+                <Mail size={64} className="mx-auto text-gray-300 mb-4" />
                 <p className="text-gray-500">
                   Your AI-generated cover letter will appear here.
                 </p>
-                <p className="text-gray-600 text-sm mt-1">
+                <p className="text-gray-400 text-sm mt-1">
                   Fill in the details and click Generate.
                 </p>
               </div>

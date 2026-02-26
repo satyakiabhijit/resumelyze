@@ -143,10 +143,10 @@ export default function GuidePage() {
         animate={{ opacity: 1, y: 0 }}
         className="text-center mb-12"
       >
-        <h1 className="text-4xl sm:text-5xl font-extrabold bg-gradient-to-r from-brand-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">
+        <h1 className="text-4xl sm:text-5xl font-extrabold bg-gradient-to-r from-brand-600 to-purple-600 bg-clip-text text-transparent mb-4">
           Resume Writing Guide
         </h1>
-        <p className="text-lg text-gray-400 max-w-2xl mx-auto">
+        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
           Expert tips and best practices to make your resume stand out.
           Written by career experts and ATS specialists.
         </p>
@@ -167,7 +167,7 @@ export default function GuidePage() {
                 <Icon size={20} className={tip.color} />
                 {tip.title}
               </h3>
-              <p className="text-gray-400 text-sm leading-relaxed">{tip.content}</p>
+              <p className="text-gray-600 text-sm leading-relaxed">{tip.content}</p>
             </motion.div>
           );
         })}
@@ -181,7 +181,7 @@ export default function GuidePage() {
         className="mb-16"
       >
         <h2 className="text-2xl font-bold text-center mb-2">
-          <span className="bg-gradient-to-r from-brand-400 to-purple-400 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-brand-600 to-purple-600 bg-clip-text text-transparent">
             Power Action Verbs
           </span>
         </h2>
@@ -191,12 +191,12 @@ export default function GuidePage() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {actionVerbsByCategory.map((cat) => (
             <div key={cat.category} className="glass-card p-5">
-              <h4 className="text-sm font-medium text-brand-400 mb-3">{cat.category}</h4>
+              <h4 className="text-sm font-medium text-brand-600 mb-3">{cat.category}</h4>
               <div className="flex flex-wrap gap-2">
                 {cat.verbs.map((verb) => (
                   <span
                     key={verb}
-                    className="px-3 py-1 bg-brand-500/10 border border-brand-500/20 text-brand-300 rounded-full text-sm"
+                    className="px-3 py-1 bg-brand-50 border border-brand-100 text-brand-700 rounded-full text-sm"
                   >
                     {verb}
                   </span>
@@ -229,14 +229,14 @@ export default function GuidePage() {
                 <AlertTriangle size={16} className="text-red-400 mt-0.5 flex-shrink-0" />
                 <div>
                   <div className="text-xs text-red-400 font-medium mb-0.5">DON&apos;T</div>
-                  <p className="text-gray-400 text-sm line-through">{c.bad}</p>
+                  <p className="text-gray-500 text-sm line-through">{c.bad}</p>
                 </div>
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle2 size={16} className="text-green-400 mt-0.5 flex-shrink-0" />
                 <div>
                   <div className="text-xs text-green-400 font-medium mb-0.5">DO</div>
-                  <p className="text-gray-300 text-sm">{c.good}</p>
+                  <p className="text-gray-700 text-sm">{c.good}</p>
                 </div>
               </div>
             </div>
@@ -273,7 +273,7 @@ export default function GuidePage() {
             <div
               key={s.section}
               className={`glass-card p-4 border-l-4 ${
-                s.required ? "border-l-green-500" : "border-l-gray-600"
+                s.required ? "border-l-green-500" : "border-l-gray-300"
               }`}
             >
               <div className="flex items-center gap-2 mb-1">
@@ -281,9 +281,9 @@ export default function GuidePage() {
                   size={14}
                   className={s.required ? "text-green-400" : "text-gray-500"}
                 />
-                <h4 className="font-medium text-white text-sm">{s.section}</h4>
+                <h4 className="font-medium text-gray-900 text-sm">{s.section}</h4>
                 {s.required && (
-                  <span className="text-[10px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded-full">
+                  <span className="text-[10px] bg-green-50 text-green-700 px-1.5 py-0.5 rounded-full">
                     Required
                   </span>
                 )}

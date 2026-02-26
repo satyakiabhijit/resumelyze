@@ -22,14 +22,85 @@ import {
 } from "lucide-react";
 import ScoreCircle from "./ScoreCircle";
 import { getScoreColor, getScoreBg, getScoreLabel } from "@/lib/utils";
+import { useAuth } from "@/components/AuthProvider";
+import { useRouter } from "next/navigation";
 import type { AnalysisResult } from "@/types";
+import { Lock, LogIn } from "lucide-react";
 
 interface ResultsDashboardProps {
   result: AnalysisResult;
   jd: string;
 }
 
+/** Overlay shown on blurred sections for non-signed-in users */
+function SignInGate({ onSave }: { onSave: () => void }) {
+  const router = useRouter();
+  function handleSignIn() {
+    onSave();                                      // persist result before leaving
+    router.push("/login?mode=signup&returnTo=/analyzer");
+  }
+  return (
+    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/60 backdrop-blur-[2px] rounded-2xl">
+      <div className="flex flex-col items-center gap-3 p-6 max-w-xs text-center">
+        <div className="w-12 h-12 rounded-full bg-brand-50 border border-brand-200 flex items-center justify-center">
+          <Lock size={22} className="text-brand-600" />
+        </div>
+        <h3 className="text-lg font-bold text-gray-900">Sign in to unlock</h3>
+        <p className="text-sm text-gray-500">
+          Create a free account to see the full analysis, detailed suggestions, and content improvements.
+        </p>
+        <button
+          onClick={handleSignIn}
+          className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-brand-600 to-purple-600 hover:from-brand-500 hover:to-purple-500 text-white font-semibold rounded-xl shadow-lg shadow-brand-500/25 transition-all text-sm"
+        >
+          <LogIn size={16} />
+          Sign In Free
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** Wrapper that blurs its children and shows sign-in gate */
+function GatedSection({ locked, onSave, children }: { locked: boolean; onSave: () => void; children: React.ReactNode }) {
+  if (!locked) return <>{children}</>;
+  return (
+    <div className="relative">
+      <div className="blur-[6px] pointer-events-none select-none">{children}</div>
+      <SignInGate onSave={onSave} />
+    </div>
+  );
+}
+
+const STORAGE_KEY = "resumelyze_pending_result";
+
+/** Save current analysis result to sessionStorage so it survives the login redirect. */
+export function saveResultForRestore(result: AnalysisResult) {
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(result));
+  } catch { /* quota exceeded — ignore */ }
+}
+
+/** Retrieve and clear the saved result (call once after login). */
+export function popSavedResult(): AnalysisResult | null {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    sessionStorage.removeItem(STORAGE_KEY);
+    return JSON.parse(raw) as AnalysisResult;
+  } catch {
+    return null;
+  }
+}
+
 export default function ResultsDashboard({ result, jd }: ResultsDashboardProps) {
+  const { user } = useAuth();
+  const isLocked = !user; // true = not signed in → blur everything except scores + first 2-3 issues
+
+  /** Called by GatedSection before navigating to /login */
+  function handleSaveResult() {
+    saveResultForRestore(result);
+  }
   // Derive domain for job search links
   const domainKeywords = [
     "data science", "software", "frontend", "backend", "AI", "machine learning",
@@ -61,11 +132,11 @@ export default function ResultsDashboard({ result, jd }: ResultsDashboardProps) 
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-8">
       {/* Header */}
       <div className="text-center">
-        <h2 className="text-3xl font-bold bg-gradient-to-r from-brand-400 to-purple-400 bg-clip-text text-transparent">
+        <h2 className="text-3xl font-bold bg-gradient-to-r from-brand-600 to-purple-600 bg-clip-text text-transparent">
           Analysis Report
         </h2>
         <p className="text-gray-500 text-sm mt-1">
-          Mode: <span className="text-brand-400 capitalize">{result.analysis_mode}</span>
+          Mode: <span className="text-brand-600 capitalize">{result.analysis_mode}</span>
         </p>
       </div>
 
@@ -74,7 +145,7 @@ export default function ResultsDashboard({ result, jd }: ResultsDashboardProps) 
         {/* JD Match */}
         <div className="glass-card p-6 flex flex-col items-center">
           <Target size={20} className="text-brand-400 mb-2" />
-          <h3 className="text-sm text-gray-400 font-medium mb-3">JD Match</h3>
+          <h3 className="text-sm text-gray-500 font-medium mb-3">JD Match</h3>
           <ScoreCircle score={result.jd_match} size={120} />
           <p className={`mt-2 text-sm font-semibold ${getScoreColor(result.jd_match)}`}>
             {getScoreLabel(result.jd_match)}
@@ -84,7 +155,7 @@ export default function ResultsDashboard({ result, jd }: ResultsDashboardProps) 
         {/* ATS Score */}
         <div className="glass-card p-6 flex flex-col items-center">
           <Shield size={20} className="text-purple-400 mb-2" />
-          <h3 className="text-sm text-gray-400 font-medium mb-3">ATS Score</h3>
+          <h3 className="text-sm text-gray-500 font-medium mb-3">ATS Score</h3>
           <ScoreCircle score={result.ats_score} size={120} />
           <p className={`mt-2 text-sm font-semibold ${getScoreColor(result.ats_score)}`}>
             {getScoreLabel(result.ats_score)}
@@ -94,7 +165,7 @@ export default function ResultsDashboard({ result, jd }: ResultsDashboardProps) 
         {/* Readability */}
         <div className="glass-card p-6 flex flex-col items-center">
           <BookOpen size={20} className="text-pink-400 mb-2" />
-          <h3 className="text-sm text-gray-400 font-medium mb-3">Readability</h3>
+          <h3 className="text-sm text-gray-500 font-medium mb-3">Readability</h3>
           <ScoreCircle score={result.readability_score} size={120} />
           <p className={`mt-2 text-sm font-semibold ${getScoreColor(result.readability_score)}`}>
             {getScoreLabel(result.readability_score)}
@@ -112,16 +183,21 @@ export default function ResultsDashboard({ result, jd }: ResultsDashboardProps) 
           </h3>
           <div className="flex flex-wrap gap-2">
             {result.found_keywords.length > 0 ? (
-              result.found_keywords.map((kw) => (
+              (isLocked ? result.found_keywords.slice(0, 3) : result.found_keywords).map((kw) => (
                 <span
                   key={kw}
-                  className="px-3 py-1 bg-green-500/10 border border-green-500/20 text-green-300 rounded-full text-sm"
+                  className="px-3 py-1 bg-green-50 border border-green-200 text-green-700 rounded-full text-sm"
                 >
                   {kw}
                 </span>
               ))
             ) : (
               <p className="text-gray-500">No matching keywords detected</p>
+            )}
+            {isLocked && result.found_keywords.length > 3 && (
+              <span className="px-3 py-1 bg-gray-100 border border-gray-200 text-gray-400 rounded-full text-sm">
+                +{result.found_keywords.length - 3} more — sign in to see
+              </span>
             )}
           </div>
         </div>
@@ -134,10 +210,10 @@ export default function ResultsDashboard({ result, jd }: ResultsDashboardProps) 
           </h3>
           <div className="flex flex-wrap gap-2">
             {result.missing_keywords.length > 0 ? (
-              result.missing_keywords.map((kw) => (
+              (isLocked ? result.missing_keywords.slice(0, 3) : result.missing_keywords).map((kw) => (
                 <span
                   key={kw}
-                  className="px-3 py-1 bg-red-500/10 border border-red-500/20 text-red-300 rounded-full text-sm"
+                  className="px-3 py-1 bg-red-50 border border-red-200 text-red-700 rounded-full text-sm"
                 >
                   {kw}
                 </span>
@@ -145,11 +221,17 @@ export default function ResultsDashboard({ result, jd }: ResultsDashboardProps) 
             ) : (
               <p className="text-green-400">✅ All key terms are present!</p>
             )}
+            {isLocked && result.missing_keywords.length > 3 && (
+              <span className="px-3 py-1 bg-gray-100 border border-gray-200 text-gray-400 rounded-full text-sm">
+                +{result.missing_keywords.length - 3} more — sign in to see
+              </span>
+            )}
           </div>
         </div>
       </motion.div>
 
       {/* ── Section Scores ── */}
+      <GatedSection locked={isLocked} onSave={handleSaveResult}>
       <motion.div variants={item} className="glass-card p-6">
         <h3 className="text-lg font-semibold flex items-center gap-2 mb-6">
           <TrendingUp size={18} className="text-brand-400" />
@@ -159,14 +241,14 @@ export default function ResultsDashboard({ result, jd }: ResultsDashboardProps) 
           {Object.entries(result.section_scores).map(([section, data]) => (
             <div key={section} className="group">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="capitalize font-medium text-gray-300">
+                <span className="capitalize font-medium text-gray-700">
                   {section}
                 </span>
                 <span className={`text-sm font-semibold ${getScoreColor(data.score)}`}>
                   {data.score}%
                 </span>
               </div>
-              <div className="w-full h-2.5 bg-gray-800 rounded-full overflow-hidden">
+              <div className="w-full h-2.5 bg-gray-200 rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${data.score}%` }}
@@ -193,8 +275,8 @@ export default function ResultsDashboard({ result, jd }: ResultsDashboardProps) 
           </h3>
           <ul className="space-y-2">
             {result.strengths.map((s, i) => (
-              <li key={i} className="flex items-start gap-2 text-gray-300 text-sm">
-                <span className="text-green-400 mt-0.5">✓</span>
+              <li key={i} className="flex items-start gap-2 text-gray-700 text-sm">
+                <span className="text-green-500 mt-0.5">✓</span>
                 {s}
               </li>
             ))}
@@ -208,8 +290,8 @@ export default function ResultsDashboard({ result, jd }: ResultsDashboardProps) 
           </h3>
           <ul className="space-y-2">
             {result.weaknesses.map((w, i) => (
-              <li key={i} className="flex items-start gap-2 text-gray-300 text-sm">
-                <span className="text-red-400 mt-0.5">✗</span>
+              <li key={i} className="flex items-start gap-2 text-gray-700 text-sm">
+                <span className="text-red-500 mt-0.5">✗</span>
                 {w}
               </li>
             ))}
@@ -232,7 +314,7 @@ export default function ResultsDashboard({ result, jd }: ResultsDashboardProps) 
               <span className="flex-shrink-0 w-6 h-6 bg-yellow-500/20 text-yellow-400 rounded-full flex items-center justify-center text-xs font-bold">
                 {i + 1}
               </span>
-              <p className="text-gray-300 text-sm">{action}</p>
+              <p className="text-gray-500 text-sm">{action}</p>
             </div>
           ))}
         </div>
@@ -244,16 +326,16 @@ export default function ResultsDashboard({ result, jd }: ResultsDashboardProps) 
           <FileSearch size={18} className="text-brand-400" />
           Profile Summary
           {result.overall_grade && (
-            <span className="ml-auto px-3 py-1 rounded-full text-sm font-bold bg-brand-500/10 border border-brand-500/20 text-brand-300">
+            <span className="ml-auto px-3 py-1 rounded-full text-sm font-bold bg-brand-50 border border-brand-200 text-brand-700">
               Grade: {result.overall_grade}
             </span>
           )}
         </h3>
-        <p className="text-gray-300 leading-relaxed">{result.profile_summary}</p>
+        <p className="text-gray-700 leading-relaxed">{result.profile_summary}</p>
 
         {result.formatting_feedback && (
           <div className="mt-4 p-3 bg-brand-500/5 border border-brand-500/10 rounded-lg">
-            <p className="text-gray-400 text-sm">
+            <p className="text-gray-600 text-sm">
               📝 <strong>Formatting:</strong> {result.formatting_feedback}
             </p>
           </div>
@@ -262,12 +344,12 @@ export default function ResultsDashboard({ result, jd }: ResultsDashboardProps) 
         {typeof result.section_completeness === "number" && result.section_completeness > 0 && (
           <div className="mt-4 p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-lg">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-sm text-gray-400">Section Completeness</span>
+              <span className="text-sm text-gray-600">Section Completeness</span>
               <span className={`text-sm font-semibold ${getScoreColor(result.section_completeness)}`}>
                 {result.section_completeness}%
               </span>
             </div>
-            <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+            <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${result.section_completeness}%` }}
@@ -299,14 +381,14 @@ export default function ResultsDashboard({ result, jd }: ResultsDashboardProps) 
                   <XCircle size={14} className="text-red-400 mt-0.5 flex-shrink-0" />
                   <div>
                     <div className="text-[10px] text-red-400 font-medium mb-0.5">CLICHÉ</div>
-                    <p className="text-gray-400 text-sm line-through">&ldquo;{c.phrase}&rdquo;</p>
+                    <p className="text-gray-500 text-sm line-through">&ldquo;{c.phrase}&rdquo;</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-2">
                   <CheckCircle2 size={14} className="text-green-400 mt-0.5 flex-shrink-0" />
                   <div>
                     <div className="text-[10px] text-green-400 font-medium mb-0.5">SUGGESTION</div>
-                    <p className="text-gray-300 text-sm">{c.suggestion}</p>
+                    <p className="text-gray-700 text-sm">{c.suggestion}</p>
                   </div>
                 </div>
               </div>
@@ -335,7 +417,7 @@ export default function ResultsDashboard({ result, jd }: ResultsDashboardProps) 
                   {result.action_verb_analysis.strong_verbs.map((v) => (
                     <span
                       key={v}
-                      className="px-2.5 py-1 bg-green-500/10 border border-green-500/20 text-green-300 rounded-full text-xs"
+                    className="px-2.5 py-1 bg-green-50 border border-green-200 text-green-700 rounded-full text-xs"
                     >
                       {v}
                     </span>
@@ -352,7 +434,7 @@ export default function ResultsDashboard({ result, jd }: ResultsDashboardProps) 
                   {result.action_verb_analysis.weak_verbs.map((v) => (
                     <span
                       key={v}
-                      className="px-2.5 py-1 bg-red-500/10 border border-red-500/20 text-red-300 rounded-full text-xs"
+                    className="px-2.5 py-1 bg-red-50 border border-red-200 text-red-700 rounded-full text-xs"
                     >
                       {v}
                     </span>
@@ -364,8 +446,8 @@ export default function ResultsDashboard({ result, jd }: ResultsDashboardProps) 
           {result.action_verb_analysis.suggestions.length > 0 && (
             <div className="space-y-2">
               {result.action_verb_analysis.suggestions.map((s, i) => (
-                <p key={i} className="text-gray-400 text-sm flex items-start gap-2">
-                  <ArrowRight size={13} className="text-brand-400 mt-0.5 flex-shrink-0" />
+                <p key={i} className="text-gray-600 text-sm flex items-start gap-2">
+                  <ArrowRight size={13} className="text-brand-600 mt-0.5 flex-shrink-0" />
                   {s}
                 </p>
               ))}
@@ -384,7 +466,7 @@ export default function ResultsDashboard({ result, jd }: ResultsDashboardProps) 
               {result.quantification_analysis.score}%
             </span>
           </h3>
-          <div className="flex items-center gap-4 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
             <div className="glass-card p-3 text-center flex-1">
               <div className="text-2xl font-bold text-cyan-400">
                 {result.quantification_analysis.quantified_bullets}
@@ -392,7 +474,7 @@ export default function ResultsDashboard({ result, jd }: ResultsDashboardProps) 
               <div className="text-xs text-gray-500">Quantified Bullets</div>
             </div>
             <div className="glass-card p-3 text-center flex-1">
-              <div className="text-2xl font-bold text-gray-400">
+              <div className="text-2xl font-bold text-gray-500">
                 {result.quantification_analysis.total_bullets}
               </div>
               <div className="text-xs text-gray-500">Total Bullets</div>
@@ -414,8 +496,8 @@ export default function ResultsDashboard({ result, jd }: ResultsDashboardProps) 
           {result.quantification_analysis.suggestions.length > 0 && (
             <div className="space-y-2">
               {result.quantification_analysis.suggestions.map((s, i) => (
-                <p key={i} className="text-gray-400 text-sm flex items-start gap-2">
-                  <Lightbulb size={13} className="text-yellow-400 mt-0.5 flex-shrink-0" />
+                <p key={i} className="text-gray-600 text-sm flex items-start gap-2">
+                  <Lightbulb size={13} className="text-yellow-500 mt-0.5 flex-shrink-0" />
                   {s}
                 </p>
               ))}
@@ -440,15 +522,15 @@ export default function ResultsDashboard({ result, jd }: ResultsDashboardProps) 
                 <div className="grid sm:grid-cols-2 gap-4 mb-2">
                   <div>
                     <div className="text-[10px] text-red-400 font-medium mb-1">ORIGINAL</div>
-                    <p className="text-gray-400 text-sm">{ci.original}</p>
+                    <p className="text-gray-500 text-sm">{ci.original}</p>
                   </div>
                   <div>
-                    <div className="text-[10px] text-green-400 font-medium mb-1">IMPROVED</div>
-                    <p className="text-gray-300 text-sm font-medium">{ci.improved}</p>
+                    <div className="text-[10px] text-green-600 font-medium mb-1">IMPROVED</div>
+                    <p className="text-gray-700 text-sm font-medium">{ci.improved}</p>
                   </div>
                 </div>
                 <p className="text-xs text-gray-500 mt-2">
-                  <strong className="text-purple-400">Why:</strong> {ci.reason}
+                  <strong className="text-purple-600">Why:</strong> {ci.reason}
                 </p>
               </div>
             ))}
@@ -467,7 +549,7 @@ export default function ResultsDashboard({ result, jd }: ResultsDashboardProps) 
             {result.recommended_roles.map((role) => (
               <span
                 key={role}
-                className="px-4 py-2 bg-purple-500/10 border border-purple-500/20 text-purple-300 rounded-lg text-sm font-medium"
+                className="px-4 py-2 bg-purple-50 border border-purple-200 text-purple-700 rounded-lg text-sm font-medium"
               >
                 {role}
               </span>
@@ -512,6 +594,7 @@ export default function ResultsDashboard({ result, jd }: ResultsDashboardProps) 
           </a>
         </div>
       </motion.div>
+      </GatedSection>
     </motion.div>
   );
 }

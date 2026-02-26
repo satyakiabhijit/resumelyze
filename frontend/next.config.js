@@ -4,6 +4,18 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ["unpdf", "mammoth"],
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+      },
+      {
+        protocol: "https",
+        hostname: "*.supabase.in",
+      },
+    ],
+  },
 };
 
 module.exports = nextConfig;

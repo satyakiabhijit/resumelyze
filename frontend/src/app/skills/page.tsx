@@ -57,10 +57,10 @@ export default function SkillsFinderPage() {
         animate={{ opacity: 1, y: 0 }}
         className="text-center mb-12"
       >
-        <h1 className="text-4xl sm:text-5xl font-extrabold bg-gradient-to-r from-brand-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">
+        <h1 className="text-4xl sm:text-5xl font-extrabold bg-gradient-to-r from-brand-600 to-purple-600 bg-clip-text text-transparent mb-4">
           AI Skills Finder
         </h1>
-        <p className="text-lg text-gray-400 max-w-2xl mx-auto">
+        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
           Discover the exact skills employers are looking for. Get comprehensive
           hard skills and soft skills recommendations for any role.
         </p>
@@ -82,7 +82,7 @@ export default function SkillsFinderPage() {
             value={jd}
             onChange={(e) => setJd(e.target.value)}
             placeholder="Paste the job description here to discover required skills..."
-            className="w-full h-48 bg-gray-800/50 border border-gray-700 rounded-xl p-4 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+            className="w-full h-48 bg-gray-50 border border-gray-200 rounded-xl p-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
           />
         </motion.div>
 
@@ -93,25 +93,25 @@ export default function SkillsFinderPage() {
           className="glass-card p-6 space-y-4"
         >
           <div>
-            <label className="text-sm text-gray-400 mb-1 block">Target Role (optional)</label>
+            <label className="text-sm text-gray-600 mb-1 block">Target Role (optional)</label>
             <input
               type="text"
               value={roleTitle}
               onChange={(e) => setRoleTitle(e.target.value)}
               placeholder="e.g., Frontend Developer"
-              className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-3 py-2 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
           <div>
-            <label className="text-sm text-gray-400 mb-1 block">
+            <label className="text-sm text-gray-600 mb-1 block">
               Your Resume (optional — for gap analysis)
             </label>
             <textarea
               value={resumeText}
               onChange={(e) => setResumeText(e.target.value)}
               placeholder="Paste your resume to see which skills you're missing..."
-              className="w-full h-32 bg-gray-800/50 border border-gray-700 rounded-xl p-3 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none text-sm"
+              className="w-full h-32 bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none text-sm"
             />
           </div>
 
@@ -144,8 +144,8 @@ export default function SkillsFinderPage() {
         >
           {/* Role Title */}
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-white">
-              Skills for <span className="text-brand-400">{result.role}</span>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Skills for <span className="text-brand-600">{result.role}</span>
             </h2>
           </div>
 
@@ -164,7 +164,7 @@ export default function SkillsFinderPage() {
                   </h3>
                   <button
                     onClick={() => copySkills(result.matching_in_resume)}
-                    className="p-1.5 text-gray-400 hover:text-white transition"
+                    className="p-1.5 text-gray-500 hover:text-gray-700 transition"
                     title="Copy"
                   >
                     <Copy size={14} />
@@ -174,7 +174,7 @@ export default function SkillsFinderPage() {
                   {result.matching_in_resume.map((skill) => (
                     <span
                       key={skill}
-                      className="px-3 py-1 bg-green-500/10 border border-green-500/20 text-green-300 rounded-full text-sm"
+                      className="px-3 py-1 bg-green-50 border border-green-200 text-green-700 rounded-full text-sm"
                     >
                       {skill}
                     </span>
@@ -194,7 +194,7 @@ export default function SkillsFinderPage() {
                   </h3>
                   <button
                     onClick={() => copySkills(result.missing_from_resume)}
-                    className="p-1.5 text-gray-400 hover:text-white transition"
+                    className="p-1.5 text-gray-500 hover:text-gray-700 transition"
                     title="Copy"
                   >
                     <Copy size={14} />
@@ -204,7 +204,7 @@ export default function SkillsFinderPage() {
                   {result.missing_from_resume.map((skill) => (
                     <span
                       key={skill}
-                      className="px-3 py-1 bg-red-500/10 border border-red-500/20 text-red-300 rounded-full text-sm"
+                      className="px-3 py-1 bg-red-50 border border-red-200 text-red-700 rounded-full text-sm"
                     >
                       {skill}
                     </span>
@@ -229,7 +229,7 @@ export default function SkillsFinderPage() {
                 <div key={idx}>
                   <div className="flex items-center gap-2 mb-3">
                     <Layers size={14} className="text-purple-400" />
-                    <h4 className="text-sm font-medium text-purple-300">{category.category}</h4>
+                    <h4 className="text-sm font-medium text-purple-700">{category.category}</h4>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {category.skills.map((skill) => {
@@ -241,8 +241,8 @@ export default function SkillsFinderPage() {
                           key={skill}
                           className={`px-3 py-1 rounded-full text-sm border ${
                             isMatching
-                              ? "bg-green-500/10 border-green-500/20 text-green-300"
-                              : "bg-gray-800 border-gray-700 text-gray-300"
+                              ? "bg-green-50 border-green-200 text-green-700"
+                              : "bg-gray-100 border-gray-200 text-gray-700"
                           }`}
                         >
                           {isMatching && "✓ "}{skill}
@@ -269,7 +269,7 @@ export default function SkillsFinderPage() {
               {result.soft_skills.map((skill) => (
                 <span
                   key={skill}
-                  className="px-4 py-2 bg-pink-500/10 border border-pink-500/20 text-pink-300 rounded-lg text-sm"
+                  className="px-4 py-2 bg-pink-50 border border-pink-200 text-pink-700 rounded-lg text-sm"
                 >
                   {skill}
                 </span>
@@ -287,7 +287,7 @@ export default function SkillsFinderPage() {
           transition={{ delay: 0.5 }}
           className="text-center py-16"
         >
-          <Sparkles size={64} className="mx-auto text-gray-700 mb-4" />
+          <Sparkles size={64} className="mx-auto text-gray-300 mb-4" />
           <p className="text-gray-500 text-lg">
             Paste a job description to discover the skills employers want
           </p>

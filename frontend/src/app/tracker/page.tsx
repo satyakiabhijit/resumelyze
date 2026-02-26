@@ -16,8 +16,13 @@ import {
   StickyNote,
   BarChart3,
   ArrowRight,
+  Cloud,
+  HardDrive,
 } from "lucide-react";
+import Link from "next/link";
 import type { TrackedJob, JobStatus } from "@/types";
+import { useAuth } from "@/components/AuthProvider";
+import { createClient } from "@/lib/supabase/client";
 
 const STATUS_CONFIG: Record<JobStatus, { label: string; color: string; bg: string }> = {
   saved: { label: "Saved", color: "text-gray-400", bg: "bg-gray-500/10 border-gray-500/20" },
@@ -33,7 +38,8 @@ function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
 
-function loadJobs(): TrackedJob[] {
+// localStorage fallback for non-logged-in users
+function loadJobsLocal(): TrackedJob[] {
   if (typeof window === "undefined") return [];
   try {
     const data = localStorage.getItem("resumelyzer_jobs");
@@ -43,11 +49,15 @@ function loadJobs(): TrackedJob[] {
   }
 }
 
-function saveJobs(jobs: TrackedJob[]) {
+function saveJobsLocal(jobs: TrackedJob[]) {
   localStorage.setItem("resumelyzer_jobs", JSON.stringify(jobs));
 }
 
 export default function JobTrackerPage() {
+  const { user } = useAuth();
+  const supabase = createClient();
+  const isLoggedIn = !!user;
+
   const [jobs, setJobs] = useState<TrackedJob[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -61,13 +71,28 @@ export default function JobTrackerPage() {
   const [formNotes, setFormNotes] = useState("");
 
   useEffect(() => {
-    setJobs(loadJobs());
-  }, []);
+    async function loadJobs() {
+      if (isLoggedIn) {
+        const { data, error } = await supabase
+          .from("tracked_jobs")
+          .select("*")
+          .order("created_at", { ascending: false });
+        if (!error && data) {
+          setJobs(data.map((j: any) => ({ ...j, date_applied: j.applied_date, date_updated: j.updated_at })));
+        }
+      } else {
+        setJobs(loadJobsLocal());
+      }
+    }
+    loadJobs();
+  }, [isLoggedIn, supabase]);
 
-  const persist = useCallback((updated: TrackedJob[]) => {
+  const persist = useCallback(async (updated: TrackedJob[]) => {
     setJobs(updated);
-    saveJobs(updated);
-  }, []);
+    if (!isLoggedIn) {
+      saveJobsLocal(updated);
+    }
+  }, [isLoggedIn]);
 
   function resetForm() {
     setFormCompany("");
@@ -79,29 +104,69 @@ export default function JobTrackerPage() {
     setEditingId(null);
   }
 
-  function handleAdd() {
+  async function handleAdd() {
     if (!formCompany.trim() || !formRole.trim()) {
       toast.error("Company and role are required");
       return;
     }
     const now = new Date().toISOString();
-    const job: TrackedJob = {
-      id: generateId(),
-      company: formCompany.trim(),
-      role: formRole.trim(),
-      url: formUrl.trim() || undefined,
-      status: formStatus,
-      date_applied: now,
-      date_updated: now,
-      notes: formNotes.trim() || undefined,
-    };
-    persist([job, ...jobs]);
+
+    if (isLoggedIn) {
+      const { data, error } = await supabase
+        .from("tracked_jobs")
+        .insert({
+          user_id: user!.id,
+          company: formCompany.trim(),
+          role: formRole.trim(),
+          url: formUrl.trim() || null,
+          status: formStatus,
+          applied_date: formStatus !== "saved" ? now : null,
+          notes: formNotes.trim() || null,
+        })
+        .select()
+        .single();
+      if (error) {
+        toast.error("Failed to add job");
+        return;
+      }
+      setJobs([{ ...data, date_applied: data.applied_date, date_updated: data.updated_at }, ...jobs]);
+    } else {
+      const job: TrackedJob = {
+        id: generateId(),
+        company: formCompany.trim(),
+        role: formRole.trim(),
+        url: formUrl.trim() || undefined,
+        status: formStatus,
+        date_applied: now,
+        date_updated: now,
+        notes: formNotes.trim() || undefined,
+      };
+      persist([job, ...jobs]);
+    }
     toast.success("Job added!");
     resetForm();
   }
 
-  function handleUpdate() {
+  async function handleUpdate() {
     if (!editingId) return;
+
+    if (isLoggedIn) {
+      const { error } = await supabase
+        .from("tracked_jobs")
+        .update({
+          company: formCompany.trim(),
+          role: formRole.trim(),
+          url: formUrl.trim() || null,
+          status: formStatus,
+          notes: formNotes.trim() || null,
+        })
+        .eq("id", editingId);
+      if (error) {
+        toast.error("Failed to update job");
+        return;
+      }
+    }
+
     const updated = jobs.map((j) =>
       j.id === editingId
         ? {
@@ -130,12 +195,18 @@ export default function JobTrackerPage() {
     setShowForm(true);
   }
 
-  function handleDelete(id: string) {
+  async function handleDelete(id: string) {
+    if (isLoggedIn) {
+      await supabase.from("tracked_jobs").delete().eq("id", id);
+    }
     persist(jobs.filter((j) => j.id !== id));
     toast.success("Job removed");
   }
 
-  function handleStatusChange(id: string, status: JobStatus) {
+  async function handleStatusChange(id: string, status: JobStatus) {
+    if (isLoggedIn) {
+      await supabase.from("tracked_jobs").update({ status }).eq("id", id);
+    }
     const updated = jobs.map((j) =>
       j.id === id ? { ...j, status, date_updated: new Date().toISOString() } : j
     );
@@ -158,13 +229,27 @@ export default function JobTrackerPage() {
         animate={{ opacity: 1, y: 0 }}
         className="text-center mb-12"
       >
-        <h1 className="text-4xl sm:text-5xl font-extrabold bg-gradient-to-r from-brand-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">
+        <h1 className="text-4xl sm:text-5xl font-extrabold bg-gradient-to-r from-brand-600 to-purple-600 bg-clip-text text-transparent mb-4">
           Job Tracker
         </h1>
-        <p className="text-lg text-gray-400 max-w-2xl mx-auto">
+        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
           Keep your job search organized. Track applications, interviews, and offers
           — all in one place.
         </p>
+        {!isLoggedIn && (
+          <p className="mt-3 text-sm text-yellow-600/80 flex items-center justify-center gap-1.5">
+            <HardDrive size={14} />
+            Data saved locally.{" "}
+            <Link href="/login" className="underline hover:text-yellow-300 transition">Sign in</Link>{" "}
+            to sync across devices.
+          </p>
+        )}
+        {isLoggedIn && (
+          <p className="mt-3 text-sm text-green-600/80 flex items-center justify-center gap-1.5">
+            <Cloud size={14} />
+            Synced to your account
+          </p>
+        )}
       </motion.div>
 
       {/* Stats Bar */}
@@ -179,7 +264,7 @@ export default function JobTrackerPage() {
             key={s.status}
             onClick={() => setFilterStatus(filterStatus === s.status ? "all" : s.status)}
             className={`glass-card p-4 text-center transition cursor-pointer ${
-              filterStatus === s.status ? "ring-2 ring-brand-500" : ""
+              filterStatus === s.status ? "ring-2 ring-brand-500" : "hover:shadow-md"
             }`}
           >
             <div className={`text-2xl font-bold ${s.color}`}>{s.count}</div>
@@ -189,7 +274,7 @@ export default function JobTrackerPage() {
       </motion.div>
 
       {/* Add Button */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div className="flex items-center gap-3">
           <h2 className="text-lg font-semibold flex items-center gap-2">
             <BarChart3 size={18} className="text-brand-400" />
@@ -198,7 +283,7 @@ export default function JobTrackerPage() {
           {filterStatus !== "all" && (
             <button
               onClick={() => setFilterStatus("all")}
-              className="text-xs text-gray-400 hover:text-white bg-gray-800 px-2 py-1 rounded-lg transition"
+              className="text-xs text-gray-500 hover:text-gray-900 bg-gray-100 px-2 py-1 rounded-lg transition"
             >
               Show all
             </button>
@@ -230,47 +315,47 @@ export default function JobTrackerPage() {
                 <h3 className="text-lg font-semibold">
                   {editingId ? "Edit Application" : "Add Application"}
                 </h3>
-                <button onClick={resetForm} className="text-gray-400 hover:text-white transition">
+                <button onClick={resetForm} className="text-gray-500 hover:text-gray-900 transition">
                   <X size={18} />
                 </button>
               </div>
               <div className="grid sm:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="text-sm text-gray-400 mb-1 block">Company *</label>
+                  <label className="text-sm text-gray-600 mb-1 block">Company *</label>
                   <input
                     type="text"
                     value={formCompany}
                     onChange={(e) => setFormCompany(e.target.value)}
                     placeholder="e.g., Google"
-                    className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-3 py-2 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
                 <div>
-                  <label className="text-sm text-gray-400 mb-1 block">Role *</label>
+                  <label className="text-sm text-gray-600 mb-1 block">Role *</label>
                   <input
                     type="text"
                     value={formRole}
                     onChange={(e) => setFormRole(e.target.value)}
                     placeholder="e.g., Software Engineer"
-                    className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-3 py-2 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
                 <div>
-                  <label className="text-sm text-gray-400 mb-1 block">Job URL (optional)</label>
+                  <label className="text-sm text-gray-600 mb-1 block">Job URL (optional)</label>
                   <input
                     type="url"
                     value={formUrl}
                     onChange={(e) => setFormUrl(e.target.value)}
                     placeholder="https://..."
-                    className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-3 py-2 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
                 <div>
-                  <label className="text-sm text-gray-400 mb-1 block">Status</label>
+                  <label className="text-sm text-gray-600 mb-1 block">Status</label>
                   <select
                     value={formStatus}
                     onChange={(e) => setFormStatus(e.target.value as JobStatus)}
-                    className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-3 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
                   >
                     {STATUS_ORDER.map((s) => (
                       <option key={s} value={s}>
@@ -281,12 +366,12 @@ export default function JobTrackerPage() {
                 </div>
               </div>
               <div className="mb-4">
-                <label className="text-sm text-gray-400 mb-1 block">Notes (optional)</label>
+                <label className="text-sm text-gray-600 mb-1 block">Notes (optional)</label>
                 <textarea
                   value={formNotes}
                   onChange={(e) => setFormNotes(e.target.value)}
                   placeholder="Add any notes about this application..."
-                  className="w-full h-20 bg-gray-800/50 border border-gray-700 rounded-lg px-3 py-2 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+                  className="w-full h-20 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
                 />
               </div>
               <button
@@ -308,7 +393,7 @@ export default function JobTrackerPage() {
           animate={{ opacity: 1 }}
           className="text-center py-16"
         >
-          <Briefcase size={64} className="mx-auto text-gray-700 mb-4" />
+          <Briefcase size={64} className="mx-auto text-gray-300 mb-4" />
           <p className="text-gray-500 text-lg">
             {jobs.length === 0
               ? "No applications tracked yet. Start by adding a job!"
@@ -331,7 +416,7 @@ export default function JobTrackerPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <Building2 size={16} className="text-gray-400 flex-shrink-0" />
-                      <h3 className="font-semibold text-white truncate">{job.company}</h3>
+                      <h3 className="font-semibold text-gray-900 truncate">{job.company}</h3>
                       {job.url && (
                         <a
                           href={job.url}
@@ -343,7 +428,7 @@ export default function JobTrackerPage() {
                         </a>
                       )}
                     </div>
-                    <p className="text-sm text-gray-400 flex items-center gap-1.5">
+                    <p className="text-sm text-gray-500 flex items-center gap-1.5">
                       <Briefcase size={13} />
                       {job.role}
                     </p>
@@ -355,7 +440,7 @@ export default function JobTrackerPage() {
                     )}
                   </div>
 
-                  <div className="flex items-center gap-3 flex-shrink-0">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto sm:flex-shrink-0">
                     {/* Status Selector */}
                     <select
                       value={job.status}
@@ -363,7 +448,7 @@ export default function JobTrackerPage() {
                       className={`text-xs font-medium px-3 py-1.5 rounded-full border ${config.bg} ${config.color} bg-transparent cursor-pointer focus:outline-none`}
                     >
                       {STATUS_ORDER.map((s) => (
-                        <option key={s} value={s} className="bg-gray-900 text-gray-200">
+                        <option key={s} value={s} className="bg-white text-gray-900">
                           {STATUS_CONFIG[s].label}
                         </option>
                       ))}
@@ -371,13 +456,13 @@ export default function JobTrackerPage() {
 
                     <div className="text-xs text-gray-500 flex items-center gap-1 whitespace-nowrap">
                       <Calendar size={12} />
-                      {new Date(job.date_updated).toLocaleDateString()}
+                      {new Date(job.date_updated || job.created_at || Date.now()).toLocaleDateString()}
                     </div>
 
                     <div className="flex gap-1">
                       <button
                         onClick={() => startEdit(job)}
-                        className="p-1.5 text-gray-400 hover:text-white transition"
+                        className="p-1.5 text-gray-500 hover:text-gray-700 transition"
                         title="Edit"
                       >
                         <Edit3 size={14} />
