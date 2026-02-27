@@ -19,6 +19,7 @@ import ModeSelector from "@/components/ModeSelector";
 import ResultsDashboard from "@/components/ResultsDashboard";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import SignInModal from "@/components/SignInModal";
+import SaveToProfileModal from "@/components/SaveToProfileModal";
 import { analyzeResume, checkHealth, getAvailableModes } from "@/lib/api";
 import { useAuth } from "@/components/AuthProvider";
 import { popSavedResult } from "@/components/ResultsDashboard";
@@ -35,6 +36,7 @@ export default function AnalyzerPage() {
   const [loading, setLoading] = useState(false);
   const [backendStatus, setBackendStatus] = useState<"checking" | "online" | "offline">("checking");
   const [showSignInModal, setShowSignInModal] = useState(false);
+  const [showSaveToProfile, setShowSaveToProfile] = useState(false);
 
   useEffect(() => {
     async function init() {
@@ -99,11 +101,9 @@ export default function AnalyzerPage() {
       toast.success("Analysis complete!");
 
       if (user) {
-        // Logged-in: save history + silently extract resume profile
+        // Logged-in: save history + ask to save profile data
         saveHistory(data);
-        if (inputMode === "text" && resumeText && resumeText.trim().length >= 50) {
-          extractAndSaveProfile(resumeText);
-        }
+        setTimeout(() => setShowSaveToProfile(true), 800);
       } else {
         // Not logged in: nudge to sign up after a short pause
         setTimeout(() => setShowSignInModal(true), 1200);
@@ -138,25 +138,20 @@ export default function AnalyzerPage() {
     }
   }
 
-  async function extractAndSaveProfile(text: string) {
-    try {
-      const res = await fetch("/api/extract-resume", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resume_text: text, save_to_profile: true }),
-      });
-      if (res.ok) {
-        toast.success("Resume data saved to your profile!", { duration: 3000 });
-      }
-    } catch {
-      // silent
-    }
-  }
+
 
   return (
     <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
       {/* Sign-in modal (shown after analysis when not logged in) */}
       <SignInModal open={showSignInModal} onClose={() => setShowSignInModal(false)} />
+
+      {/* Save-to-profile popup (shown after analysis for logged-in users) */}
+      <SaveToProfileModal
+        open={showSaveToProfile}
+        onClose={() => setShowSaveToProfile(false)}
+        resumeFile={inputMode === "file" ? file : null}
+        resumeText={inputMode === "text" ? resumeText : null}
+      />
 
       {/* Hero Section */}
       <motion.div

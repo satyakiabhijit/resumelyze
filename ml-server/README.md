@@ -1,3 +1,12 @@
+---
+title: Resumelyze ML Server
+emoji: 📄
+colorFrom: blue
+colorTo: purple
+sdk: docker
+pinned: false
+---
+
 # Resumelyze ML Server
 
 Local ML-powered resume analysis with **95%+ accuracy** — no external API required.

@@ -1,6 +1,29 @@
 # Deployment Guide — Resumelyze
 
-Deploy the **frontend** on Vercel (free tier).
+Deploy the **frontend** on Vercel (free tier) and **ML server** on Hugging Face Spaces (free tier).
+
+---
+
+## 📋 Overview
+
+- **Frontend**: Next.js app → Vercel (free)
+- **ML Server**: Python FastAPI → Hugging Face Spaces (free)
+- **Database**: Supabase (free tier)
+
+**Total cost: $0/month** (with cold starts on ML server after 48h inactivity)
+
+---
+
+## 🤖 ML Server Deployment (Hugging Face Spaces)
+
+**See [HF_DEPLOYMENT.md](./HF_DEPLOYMENT.md) for detailed instructions.**
+
+Quick summary:
+1. Create a new Space on [huggingface.co/spaces](https://huggingface.co/spaces)
+2. Select **Docker SDK**
+3. Upload `ml-server/` folder contents (already configured with Dockerfile, app.py, README.md)
+4. Wait for build (~5-10 min)
+5. Copy your Space URL: `https://YOUR-USERNAME-resumelyze-ml-server.hf.space`
 
 ---
 
@@ -34,14 +57,20 @@ git push origin main
    - **Build Command**: `npm run build` (auto-detected)
    - **Output Directory**: `.next` (auto-detected)
 
-#### 4. Add Environment Variable
+#### 4. Add Environment Variables
 In Vercel Project Settings → Environment Variables, add:
 
 ```
 GOOGLE_API_KEY=your_actual_api_key_here
+ML_SERVER_URL=https://YOUR-USERNAME-resumelyze-ml-server.hf.space
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-**⚠️ Important**: Replace `your_actual_api_key_here` with your real API key from step 1.
+**⚠️ Important**: 
+- Replace `GOOGLE_API_KEY` with your real API key from step 1
+- Replace `ML_SERVER_URL` with your Hugging Face Space URL
+- Replace Supabase credentials with your project's values
 
 Apply to: **Production**, **Preview**, and **Development** environments.
 

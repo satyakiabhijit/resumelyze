@@ -132,6 +132,12 @@ export async function POST(req: NextRequest) {
 
 JSON Schema:
 {
+  "full_name": "Candidate Full Name",
+  "email": "email@example.com",
+  "phone": "+1-234-567-8900",
+  "location": "City, State/Country",
+  "linkedin_url": "https://linkedin.com/in/username",
+  "headline": "Senior Frontend Developer",
   "skills": ["skill1", "skill2"],
   "experience": [
     {"id": "abc12345", "company": "Company Name", "role": "Job Title", "duration": "Jan 2022 – Present", "description": "What you did"}
@@ -159,6 +165,9 @@ CRITICAL RULES — follow exactly:
 9. skills: max 30 unique items, real technical/soft skills only.
 10. All "id" fields: 8-char alphanumeric, unique.
 11. If a section heading is not present, output an empty array [] for that field.
+12. "full_name" should be the candidate's full name from the top of the resume.
+13. "email", "phone", "location", "linkedin_url" should be extracted from contact info at the top. Use empty string "" if not found.
+14. "headline" should be a short professional title (e.g. "Full Stack Developer") — derive from the resume's title/objective or most recent role.
 
 RESUME TEXT:
 ${resume_text.slice(0, 8000)}`;
@@ -182,6 +191,12 @@ ${resume_text.slice(0, 8000)}`;
           });
         };
         resumeData = {
+          full_name: parsed.full_name || "",
+          email: parsed.email || "",
+          phone: parsed.phone || "",
+          location: parsed.location || "",
+          linkedin_url: parsed.linkedin_url || "",
+          headline: parsed.headline || "",
           skills: [...new Set(parsed.skills || [])],
           experience: dedup(ensureId(parsed.experience || [])),
           projects: dedup(ensureId(parsed.projects || [])),
@@ -202,9 +217,20 @@ ${resume_text.slice(0, 8000)}`;
       const supabase = createSupabaseClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        // Separate contact fields from resume_data JSONB
+        const { full_name, email, phone, location, linkedin_url, headline, ...resumeOnly } = resumeData;
+
+        const profileUpdate: Record<string, unknown> = { resume_data: resumeOnly };
+        if (full_name) profileUpdate.full_name = full_name;
+        if (email) profileUpdate.email = email;
+        if (phone) profileUpdate.phone = phone;
+        if (location) profileUpdate.location = location;
+        if (linkedin_url) profileUpdate.linkedin_url = linkedin_url;
+        if (headline) profileUpdate.headline = headline;
+
         await supabase
           .from("profiles")
-          .update({ resume_data: resumeData })
+          .update(profileUpdate)
           .eq("id", user.id);
       }
     }

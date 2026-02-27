@@ -104,10 +104,16 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS — allow Next.js dev server
+# CORS — allow Next.js dev server + Vercel deployments
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://*.vercel.app",  # Vercel preview deployments
+        "https://resumelyze.vercel.app",  # Your production domain (update this)
+        "*"  # Allow all origins (remove in production for security)
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
