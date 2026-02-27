@@ -22,7 +22,8 @@ export async function GET() {
     .limit(5);
 
   if (error) {
-    return NextResponse.json({ detail: error.message }, { status: 500 });
+    console.error("history GET error:", error.message);
+    return NextResponse.json({ detail: "Failed to fetch history" }, { status: 500 });
   }
 
   return NextResponse.json(data);
@@ -65,7 +66,8 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) {
-    return NextResponse.json({ detail: error.message }, { status: 500 });
+    console.error("history POST error:", error.message);
+    return NextResponse.json({ detail: "Failed to save analysis" }, { status: 500 });
   }
 
   // ── Enforce max 5 reports per user — delete oldest if over limit ──
@@ -112,7 +114,8 @@ export async function DELETE(req: NextRequest) {
     .eq("user_id", user.id);
 
   if (error) {
-    return NextResponse.json({ detail: error.message }, { status: 500 });
+    console.error("history DELETE error:", error.message);
+    return NextResponse.json({ detail: "Failed to delete analysis" }, { status: 500 });
   }
 
   return NextResponse.json({ success: true });

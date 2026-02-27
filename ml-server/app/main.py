@@ -110,14 +110,13 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "http://127.0.0.1:3000",
-        "https://*.vercel.app",  # Vercel preview deployments
-        "https://resumelyze.vercel.app",  # Your production domain (update this)
-        "https://satyakiabhijit-resumelyzer.hf.space",  # HF Space self-reference
-        "*"  # Allow all origins (remove in production for security)
+        "https://*.vercel.app",
+        "https://resumelyze.vercel.app",
+        "https://satyakiabhijit-resumelyzer.hf.space",
     ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type"],
 )
 
 

@@ -24,9 +24,10 @@ async function requireAdmin() {
 }
 
 // GET — public-ish read (used by middleware + admin UI)
+// Uses anon client — site_settings has a public-read RLS policy
 export async function GET() {
-  const admin = getAdminClient();
-  const { data, error } = await admin
+  const supabase = createClient();
+  const { data, error } = await supabase
     .from("site_settings")
     .select("value")
     .eq("key", "maintenance_mode")

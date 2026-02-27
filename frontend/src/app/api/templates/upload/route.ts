@@ -29,7 +29,15 @@ export async function POST(req: NextRequest) {
 
   if (!file) return NextResponse.json({ detail: "No file provided" }, { status: 400 });
 
-  const ext = file.name.split(".").pop() || "jpg";
+  const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+  if (!ALLOWED_TYPES.includes(file.type)) {
+    return NextResponse.json(
+      { detail: "Invalid file type. Only JPEG, PNG, WebP, and GIF images are allowed." },
+      { status: 400 }
+    );
+  }
+
+  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
   const filename = `template-${Date.now()}.${ext}`;
 
   // Use service role key to bypass RLS for storage upload

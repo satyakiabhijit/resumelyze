@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
-
 export async function POST(req: NextRequest) {
+  const apiKey = process.env.GOOGLE_API_KEY;
+  if (!apiKey) {
+    return NextResponse.json({ error: "AI service not configured" }, { status: 503 });
+  }
+  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
   try {
     const body = await req.json();
     const { jobTitle, company, experienceLevel, focusArea } = body;
@@ -75,7 +78,7 @@ Respond ONLY with valid JSON (no markdown, no code blocks):
 
 Include 3-4 questions per category. Make answers realistic and specific to the role.`;
 
-    const res = await fetch(GEMINI_URL, {
+    const res = await fetch(geminiUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -85,8 +88,7 @@ Include 3-4 questions per category. Make answers realistic and specific to the r
     });
 
     if (!res.ok) {
-      const err = await res.text();
-      console.error("Gemini error:", err);
+      console.error("Gemini error:", res.status, res.statusText);
       return NextResponse.json({ error: "AI request failed" }, { status: 500 });
     }
 
@@ -97,7 +99,7 @@ Include 3-4 questions per category. Make answers realistic and specific to the r
     const parsed = JSON.parse(clean);
     return NextResponse.json(parsed);
   } catch (err) {
-    console.error("interview-questions error:", err);
+    console.error("interview-questions error:", err instanceof Error ? err.message : "Unknown error");
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

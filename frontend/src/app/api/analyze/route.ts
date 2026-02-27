@@ -82,9 +82,9 @@ export async function POST(req: NextRequest) {
       );
     }
   } catch (error: any) {
-    console.error("Analysis error:", error);
+    console.error("Analysis error:", error instanceof Error ? error.message : "Unknown error");
     return NextResponse.json(
-      { detail: error.message || "Analysis failed" },
+      { detail: "Analysis failed" },
       { status: 500 }
     );
   }

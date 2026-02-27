@@ -22,7 +22,8 @@ export async function GET() {
     .limit(50);
 
   if (error) {
-    return NextResponse.json({ detail: error.message }, { status: 500 });
+    console.error("saved-letters GET error:", error.message);
+    return NextResponse.json({ detail: "Failed to fetch cover letters" }, { status: 500 });
   }
 
   return NextResponse.json(data);
@@ -65,7 +66,8 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) {
-    return NextResponse.json({ detail: error.message }, { status: 500 });
+    console.error("saved-letters POST error:", error.message);
+    return NextResponse.json({ detail: "Failed to save cover letter" }, { status: 500 });
   }
 
   return NextResponse.json(data);
@@ -96,7 +98,8 @@ export async function DELETE(req: NextRequest) {
     .eq("user_id", user.id);
 
   if (error) {
-    return NextResponse.json({ detail: error.message }, { status: 500 });
+    console.error("saved-letters DELETE error:", error.message);
+    return NextResponse.json({ detail: "Failed to delete cover letter" }, { status: 500 });
   }
 
   return NextResponse.json({ success: true });
