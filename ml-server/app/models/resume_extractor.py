@@ -290,10 +290,7 @@ def _parse_entries(section_text: str) -> List[Dict[str, str]]:
                 else:
                     current["description"] = bullet_text
         elif has_date and is_short:
-            _flush()
-            if current:
-                entries.append(current)
-                current = None
+            # Date line belongs with the pending role/company lines
             pending.append(stripped)
             _flush()
         elif is_short:
@@ -347,8 +344,16 @@ def _parse_education(section_text: str) -> List[Dict[str, str]]:
         gpa_match = re.search(
             r"(?:GPA|CGPA|gpa)[:\s]*(\d+\.?\d*)\s*/?\s*(\d+\.?\d*)?", line, re.I
         )
+        is_year_or_gpa_only = (
+            not has_degree
+            and (years or gpa_match)
+            and len(line) < 40
+        )
 
         if has_degree:
+            if current is not None and current["degree"]:
+                entries.append(current)
+                current = None
             if current is None:
                 current = {"id": uuid.uuid4().hex[:8], "institution": "",
                             "degree": "", "year": "", "gpa": ""}
@@ -356,6 +361,12 @@ def _parse_education(section_text: str) -> List[Dict[str, str]]:
             if years:
                 current["year"] = years[-1]
             if gpa_match:
+                current["gpa"] = gpa_match.group(1)
+        elif current and is_year_or_gpa_only:
+            # Merge year/GPA lines into the current entry
+            if years and not current["year"]:
+                current["year"] = years[-1]
+            if gpa_match and not current["gpa"]:
                 current["gpa"] = gpa_match.group(1)
         elif current and not current["institution"]:
             current["institution"] = line
