@@ -112,6 +112,7 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         "https://*.vercel.app",  # Vercel preview deployments
         "https://resumelyze.vercel.app",  # Your production domain (update this)
+        "https://satyakiabhijit-resumelyzer.hf.space",  # HF Space self-reference
         "*"  # Allow all origins (remove in production for security)
     ],
     allow_credentials=True,

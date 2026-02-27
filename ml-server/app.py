@@ -1,13 +1,12 @@
 """
-Hugging Face Spaces entry point for Resumelyze ML Server.
-This file is required by HF Spaces to launch the FastAPI app.
+Hugging Face Spaces entry point — NOT used directly.
+uvicorn runs app.main:app from the Dockerfile CMD.
+This file is kept only for local convenience.
 """
 
-from app.main import app
-
-# Hugging Face Spaces will automatically run this with uvicorn
-# No need for manual uvicorn.run() — just import the app
+# Entry point is: uvicorn app.main:app --host 0.0.0.0 --port 7860
+# See Dockerfile CMD
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=7860)
+    uvicorn.run("app.main:app", host="0.0.0.0", port=7860)
