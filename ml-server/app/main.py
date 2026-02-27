@@ -25,6 +25,7 @@ from app.schemas import (
     QuantificationAnalysis, ATSDetailedCheck, ContentImprovement,
     CoverLetterRequest, CoverLetterResult,
     SkillsRequest, SkillsResult, SkillCategory,
+    ExtractRequest, ExtractResult,
 )
 from app.config import HOST, PORT
 
@@ -385,6 +386,29 @@ async def find_skills(req: SkillsRequest):
         missing_from_resume=missing[:20],
         matching_in_resume=matching[:20],
     )
+
+
+# ── Resume Data Extraction ──
+
+@app.post("/extract", response_model=ExtractResult)
+async def extract_resume(req: ExtractRequest):
+    """
+    Extract structured resume data using local NLP (spaCy + regex).
+    No external API dependency — fully local.
+    """
+    if not _models_ready:
+        raise HTTPException(503, "Models are still loading, please retry in a moment")
+
+    import time
+    t0 = time.time()
+
+    from app.models.resume_extractor import extract_resume_data
+    data = extract_resume_data(req.resume_text)
+
+    elapsed = time.time() - t0
+    print(f"[ML] Resume extraction complete in {elapsed:.2f}s — name: {data.get('full_name', 'N/A')}")
+
+    return ExtractResult(**data)
 
 
 # ══════════════════════════════════════════════════════════════

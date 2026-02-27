@@ -120,3 +120,41 @@ class SkillsResult(BaseModel):
     soft_skills: List[str] = []
     missing_from_resume: List[str] = []
     matching_in_resume: List[str] = []
+
+
+# ── Resume Extraction ─────────────────────────────────────────
+
+class ExtractRequest(BaseModel):
+    resume_text: str = Field(..., min_length=50)
+
+
+class ExperienceEntry(BaseModel):
+    id: str = ""
+    company: str = ""
+    role: str = ""
+    duration: str = ""
+    description: str = ""
+
+
+class EducationEntry(BaseModel):
+    id: str = ""
+    institution: str = ""
+    degree: str = ""
+    year: str = ""
+    gpa: str = ""
+
+
+class ExtractResult(BaseModel):
+    full_name: str = ""
+    email: str = ""
+    phone: str = ""
+    location: str = ""
+    linkedin_url: str = ""
+    headline: str = ""
+    skills: List[str] = []
+    experience: List[ExperienceEntry] = []
+    projects: List[ExperienceEntry] = []
+    education: List[EducationEntry] = []
+    certifications: List[str] = []
+    languages: List[str] = []
+    summary: str = ""

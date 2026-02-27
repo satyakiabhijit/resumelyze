@@ -5,36 +5,19 @@ import { extractTextFromFile } from "@/lib/pdf-parser";
 export const maxDuration = 30;
 export const dynamic = "force-dynamic";
 
-const GEMINI_MODELS = [
-  "gemini-2.5-flash",
-  "gemini-2.0-flash",
-  "gemini-1.5-flash",
-  "gemini-1.5-pro",
-];
+const ML_SERVER = process.env.ML_SERVER_URL || "http://127.0.0.1:8100";
 
-async function callGemini(apiKey: string, prompt: string): Promise<string> {
-  for (const model of GEMINI_MODELS) {
-    try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.1, maxOutputTokens: 2048 },
-          }),
-        }
-      );
-      if (!res.ok) continue;
-      const data = await res.json();
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (text) return text;
-    } catch {
-      continue;
-    }
+/** Call ML server /extract endpoint for NLP-based extraction */
+async function mlExtract(resumeText: string): Promise<any> {
+  const res = await fetch(`${ML_SERVER}/extract`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ resume_text: resumeText }),
+  });
+  if (!res.ok) {
+    throw new Error(`ML extract failed (${res.status})`);
   }
-  throw new Error("All Gemini models failed");
+  return res.json();
 }
 
 /** NLP fallback: extract skills/education/experience via regex heuristics */
@@ -127,88 +110,11 @@ export async function POST(req: NextRequest) {
     const apiKey = process.env.GOOGLE_API_KEY || "";
     let resumeData: any;
 
-    if (apiKey) {
-      const prompt = `You are a precise resume parser. Extract structured data from the resume below and return ONLY valid JSON — no markdown fences, no explanation, no extra text.
-
-JSON Schema:
-{
-  "full_name": "Candidate Full Name",
-  "email": "email@example.com",
-  "phone": "+1-234-567-8900",
-  "location": "City, State/Country",
-  "linkedin_url": "https://linkedin.com/in/username",
-  "headline": "Senior Frontend Developer",
-  "skills": ["skill1", "skill2"],
-  "experience": [
-    {"id": "abc12345", "company": "Company Name", "role": "Job Title", "duration": "Jan 2022 – Present", "description": "What you did"}
-  ],
-  "projects": [
-    {"id": "def67890", "company": "Project Name", "role": "Tech Stack or Your Role", "duration": "Year", "description": "What the project does"}
-  ],
-  "education": [
-    {"id": "ghi11111", "institution": "University Name", "degree": "Degree & Field", "year": "2024", "gpa": "3.8"}
-  ],
-  "certifications": ["Cert Name — Issuer (Year)"],
-  "languages": ["English", "Spanish"],
-  "summary": "2-3 sentence professional summary"
-}
-
-CRITICAL RULES — follow exactly:
-1. "experience" = ONLY entries under headings like: Work Experience, Employment History, Professional Experience, Internships, Jobs. These are paid roles at real organisations.
-2. "projects" = ONLY entries under headings like: Projects, Academic Projects, Personal Projects, Portfolio, Side Projects. These are things you built.
-3. NEVER put a project in experience, and NEVER put a job in projects.
-4. Each item must appear EXACTLY ONCE — no duplicates anywhere.
-5. Each "company" field should be just the organisation or project name (no role, no date).
-6. Each "role" field should be just the job title or tech stack (no date, no company).
-7. "duration" should be the date range or year only (e.g. "Jun–Aug 2024" or "2025").
-8. "description" should be the bullet points or description for that single entry only — do not mix in text from other entries.
-9. skills: max 30 unique items, real technical/soft skills only.
-10. All "id" fields: 8-char alphanumeric, unique.
-11. If a section heading is not present, output an empty array [] for that field.
-12. "full_name" should be the candidate's full name from the top of the resume.
-13. "email", "phone", "location", "linkedin_url" should be extracted from contact info at the top. Use empty string "" if not found.
-14. "headline" should be a short professional title (e.g. "Full Stack Developer") — derive from the resume's title/objective or most recent role.
-
-RESUME TEXT:
-${resume_text.slice(0, 8000)}`;
-
-      try {
-        const raw = await callGemini(apiKey, prompt);
-        // Strip any accidental markdown fences
-        const cleaned = raw.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-        const parsed = JSON.parse(cleaned);
-        // Ensure all items have IDs
-        const ensureId = (arr: any[]) =>
-          arr.map((e: any) => ({ ...e, id: e.id || crypto.randomUUID().slice(0, 8) }));
-        // Deduplicate by company+role key
-        const dedup = (arr: any[]) => {
-          const seen = new Set<string>();
-          return arr.filter((e: any) => {
-            const key = `${e.company}|${e.role}`.toLowerCase();
-            if (seen.has(key)) return false;
-            seen.add(key);
-            return true;
-          });
-        };
-        resumeData = {
-          full_name: parsed.full_name || "",
-          email: parsed.email || "",
-          phone: parsed.phone || "",
-          location: parsed.location || "",
-          linkedin_url: parsed.linkedin_url || "",
-          headline: parsed.headline || "",
-          skills: [...new Set(parsed.skills || [])],
-          experience: dedup(ensureId(parsed.experience || [])),
-          projects: dedup(ensureId(parsed.projects || [])),
-          education: ensureId(parsed.education || []),
-          certifications: [...new Set(parsed.certifications || [])],
-          languages: [...new Set(parsed.languages || [])],
-          summary: parsed.summary || "",
-        };
-      } catch {
-        resumeData = localExtract(resume_text);
-      }
-    } else {
+    // Primary: ML server (local NLP, no external API needed)
+    try {
+      resumeData = await mlExtract(resume_text);
+    } catch {
+      // Fallback: local regex heuristics
       resumeData = localExtract(resume_text);
     }
 
@@ -237,6 +143,7 @@ ${resume_text.slice(0, 8000)}`;
 
     return NextResponse.json(resumeData);
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Extraction failed" }, { status: 500 });
+    console.error("extract-resume error:", err instanceof Error ? err.message : "Unknown error");
+    return NextResponse.json({ error: "Extraction failed" }, { status: 500 });
   }
 }
