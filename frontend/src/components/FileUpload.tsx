@@ -57,18 +57,18 @@ export default function FileUpload({ file, onFileChange }: FileUploadProps) {
       {...getRootProps()}
       className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-300 ${
         isDragActive
-          ? "border-brand-500 bg-brand-500/10 scale-[1.02]"
-          : "border-gray-700 hover:border-brand-500/50 hover:bg-gray-800/30"
+          ? "border-brand-500 bg-brand-50 scale-[1.02]"
+          : "border-gray-300 hover:border-brand-500/50 hover:bg-gray-50"
       }`}
     >
       <input {...getInputProps()} />
       <Upload
         size={48}
         className={`mx-auto mb-4 ${
-          isDragActive ? "text-brand-400" : "text-gray-500"
+          isDragActive ? "text-brand-600" : "text-gray-400"
         }`}
       />
-      <p className="text-gray-300 font-medium">
+      <p className="text-gray-700 font-medium">
         {isDragActive
           ? "Drop your resume here..."
           : "Drag & drop your resume, or click to browse"}

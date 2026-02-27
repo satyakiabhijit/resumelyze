@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { aiFindSkills } from "@/lib/gemini";
+
+const ML_SERVER = process.env.ML_SERVER_URL || "http://127.0.0.1:8100";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -16,36 +17,33 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const apiKey = process.env.GOOGLE_API_KEY || "";
-    if (!apiKey) {
-      return NextResponse.json(
-        { detail: "AI features require GOOGLE_API_KEY environment variable" },
-        { status: 503 }
-      );
+    // Call local ML server for skills analysis
+    const res = await fetch(`${ML_SERVER}/skills`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        job_description,
+        resume_text,
+        role_title,
+      }),
+    });
+
+    if (!res.ok) {
+      const detail = await res.text();
+      throw new Error(`ML server error (${res.status}): ${detail}`);
     }
 
-    const result = await aiFindSkills(
-      job_description,
-      resume_text,
-      role_title,
-      apiKey
-    );
-
+    const result = await res.json();
     return NextResponse.json(result);
   } catch (error: any) {
     console.error("Skills finder error:", error);
-    const msg: string = error?.message || "";
-    const isKeyError =
-      msg.includes("API key expired") ||
-      msg.includes("INVALID_ARGUMENT") ||
-      msg.includes("Please renew the API key");
     return NextResponse.json(
       {
-        detail: isKeyError
-          ? "Your Google API key has expired. Please renew it and update GOOGLE_API_KEY in frontend/.env.local."
+        detail: error.message?.includes("fetch")
+          ? "ML server is not running. Start it with: cd ml-server && python -m app.main"
           : "Skills analysis failed. Please try again.",
       },
-      { status: isKeyError ? 503 : 500 }
+      { status: 503 }
     );
   }
 }

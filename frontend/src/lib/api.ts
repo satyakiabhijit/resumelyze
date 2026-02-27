@@ -27,11 +27,9 @@ export async function analyzeResume(
   jobDescription: string,
   resumeFile: File | null,
   resumeText: string | null,
-  mode: string = "hybrid"
 ): Promise<AnalysisResult> {
   const formData = new FormData();
   formData.append("job_description", jobDescription);
-  formData.append("mode", mode);
 
   if (resumeFile) {
     formData.append("resume_file", resumeFile);

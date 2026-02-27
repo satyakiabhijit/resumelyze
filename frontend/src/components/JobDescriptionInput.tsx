@@ -23,7 +23,7 @@ export default function JobDescriptionInput({
         placeholder="Paste the complete job description here...
 
 Include requirements, responsibilities, qualifications, and preferred skills for the best analysis."
-        className="w-full h-72 bg-gray-800/50 border border-gray-700 rounded-xl p-4 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none transition"
+        className="w-full h-72 bg-gray-50 border border-gray-200 rounded-xl p-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none transition"
       />
       <p className="text-gray-500 text-xs mt-2">
         {value.length > 0
