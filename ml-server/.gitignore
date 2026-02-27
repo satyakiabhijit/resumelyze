@@ -50,4 +50,6 @@ Thumbs.db
 
 # Large model cache (will download on HF automatically)
 .cache/
+# Ignore downloaded/cached model weights but keep app/models source
 models/
+!app/models/
